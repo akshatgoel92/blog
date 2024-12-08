@@ -9,7 +9,6 @@ website:
     left: "&copy; CC-By Akshat Goel"
  
   navbar:
-    navbar:
       right:
         - about.qmd
 
