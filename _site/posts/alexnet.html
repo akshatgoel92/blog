@@ -8,7 +8,7 @@
 
 <meta name="dcterms.date" content="2025-02-14">
 
-<title>Object Recognition Using AlexNet – Akshat’s Blog</title>
+<title>Object Recognition Using AlexNet – Akshat’s Notes</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -143,7 +143,7 @@ window.Quarto = {
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a class="navbar-brand" href="../index.html">
-    <span class="navbar-title">Akshat’s Blog</span>
+    <span class="navbar-title">Akshat’s Notes</span>
     </a>
   </div>
             <div id="quarto-search" class="" title="Search"></div>
@@ -225,7 +225,9 @@ window.Quarto = {
 
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>In the previous blog post, we implemented Lenet-5, which was released in 1998. The next big breakthrough for deep learning came in 2012, with the release of AlexNet. Jointly authored by Alex Krizhevsky, after whom the model is named, with Ilya Sutskever and Geoffrey Hinton, AlexNet won the Imagenet competition in 2012 by a very big margin, demonstrating that deep learning approaches could be the state-of-the art in computer vision tasks. In this post, we will reimplement the AlexNet architecture with close reference to the original paper. We will try to stay as faithful to the published version as possible, but wherever we deviate, we will be careful to document it. The major discovery of AlexNet, which we will try to convey, is that training deep neural networks with many layers could dramatically increase performance, and the compute required to train neural networks of interesting depth could be provided by graphics programming units (GPUs).</p>
+<p>In the previous blog post, we implemented Lenet-5, which was released in 1998. The Lenet series of models were extremely good for the task of digit recognition. However, the MNIST dataset was relatively small, both in terms of total images and the number of classes available. Training neural nets for other more complicated tasks on larger datasets would have taken an infeasibly long time on CPUs. Other machine learning approaches, like support vector machines, which were feasible to train, gained prominence during this time.</p>
+<p>The next big breakthrough for deep learning came in 2012, with the release of AlexNet. Jointly authored by Alex Krizhevsky, after whom the model is named, with Ilya Sutskever and Geoffrey Hinton, AlexNet won the Imagenet competition in 2012 by a very big margin, 10.1% in error rate, demonstrating that deep learning approaches could be the state-of-the art in complicated computer vision tasks.</p>
+<p>In this post, we will reimplement the AlexNet architecture with close reference to the original paper. We will try to stay as faithful to the published version as possible, but wherever we deviate, we will be careful to document it. The major discovery of AlexNet, which we will try to convey, is that training deep neural networks with many layers could dramatically increase performance, and the compute required to train neural networks of interesting depth could be provided by graphics programming units (GPUs).</p>
 <div id="4143c365-6f2b-40bd-9166-8e2f40dd5e9a" class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Import packages</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
