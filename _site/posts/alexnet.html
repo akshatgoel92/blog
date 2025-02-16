@@ -200,12 +200,12 @@ window.Quarto = {
   <li><a href="#the-imagenet-object-recognition-task" id="toc-the-imagenet-object-recognition-task" class="nav-link" data-scroll-target="#the-imagenet-object-recognition-task">The ImageNet object recognition task</a></li>
   <li><a href="#alexnet-architecture" id="toc-alexnet-architecture" class="nav-link" data-scroll-target="#alexnet-architecture">AlexNet architecture</a></li>
   <li><a href="#speeding-up-training-model-parallelism" id="toc-speeding-up-training-model-parallelism" class="nav-link" data-scroll-target="#speeding-up-training-model-parallelism">Speeding up training: model parallelism</a></li>
-  <li><a href="#speeding-up-training-rectified-linear-unit-relu" id="toc-speeding-up-training-rectified-linear-unit-relu" class="nav-link" data-scroll-target="#speeding-up-training-rectified-linear-unit-relu">Speeding up training: Rectified Linear Unit (ReLU)</a></li>
-  <li><a href="#preventing-overfitting-dropout" id="toc-preventing-overfitting-dropout" class="nav-link" data-scroll-target="#preventing-overfitting-dropout">Preventing overfitting: Dropout</a></li>
-  <li><a href="#preventing-overfitting-data-augmentation" id="toc-preventing-overfitting-data-augmentation" class="nav-link" data-scroll-target="#preventing-overfitting-data-augmentation">Preventing overfitting: Data augmentation</a></li>
+  <li><a href="#speeding-up-training-rectified-linear-unit-relu" id="toc-speeding-up-training-rectified-linear-unit-relu" class="nav-link" data-scroll-target="#speeding-up-training-rectified-linear-unit-relu">Speeding up training: rectified linear unit (ReLU)</a></li>
+  <li><a href="#preventing-overfitting-dropout" id="toc-preventing-overfitting-dropout" class="nav-link" data-scroll-target="#preventing-overfitting-dropout">Preventing overfitting: dropout</a></li>
+  <li><a href="#preventing-overfitting-data-augmentation" id="toc-preventing-overfitting-data-augmentation" class="nav-link" data-scroll-target="#preventing-overfitting-data-augmentation">Preventing overfitting: data augmentation</a></li>
   <li><a href="#training-utilities" id="toc-training-utilities" class="nav-link" data-scroll-target="#training-utilities">Training utilities</a></li>
-  <li><a href="#training-stochastic-gradient-descent-with-weight-decay" id="toc-training-stochastic-gradient-descent-with-weight-decay" class="nav-link" data-scroll-target="#training-stochastic-gradient-descent-with-weight-decay">Training: Stochastic Gradient Descent with Weight Decay</a></li>
-  <li><a href="#training-learning-rate-schedule" id="toc-training-learning-rate-schedule" class="nav-link" data-scroll-target="#training-learning-rate-schedule">Training: Learning Rate Schedule</a></li>
+  <li><a href="#training-stochastic-gradient-descent-with-weight-decay" id="toc-training-stochastic-gradient-descent-with-weight-decay" class="nav-link" data-scroll-target="#training-stochastic-gradient-descent-with-weight-decay">Training: stochastic gradient descent with weight Decay</a></li>
+  <li><a href="#training-learning-rate-schedule" id="toc-training-learning-rate-schedule" class="nav-link" data-scroll-target="#training-learning-rate-schedule">Training: learning rate schedule</a></li>
   <li><a href="#training-loop" id="toc-training-loop" class="nav-link" data-scroll-target="#training-loop">Training loop</a></li>
   <li><a href="#execution" id="toc-execution" class="nav-link" data-scroll-target="#execution">Execution</a></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
@@ -226,7 +226,7 @@ window.Quarto = {
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
 <p>In the previous blog post, we implemented Lenet-5, which was released in 1998. The Lenet series of models were extremely good for the task of digit recognition. However, the MNIST dataset was relatively small, both in terms of total images and the number of classes available. Training neural nets for other more complicated tasks on larger datasets would have taken an infeasibly long time on CPUs. Other machine learning approaches, like support vector machines, which were feasible to train, gained prominence during this time.</p>
-<p>The next big breakthrough for deep learning came in 2012, with the release of AlexNet. Jointly authored by Alex Krizhevsky, after whom the model is named, with Ilya Sutskever and Geoffrey Hinton, AlexNet won the Imagenet competition in 2012 by a very big margin, 10.1% in error rate, demonstrating that deep learning approaches could be the state-of-the art in complicated computer vision tasks.</p>
+<p>The next big breakthrough for deep learning came in 2012, with the release of AlexNet. Jointly authored by Alex Krizhevsky, after whom the model is named, with Ilya Sutskever and Geoffrey Hinton, AlexNet won the Imagenet competition in 2012 by a very big margin, ~10% in error rate, demonstrating that deep learning approaches could be the state-of-the art in complicated computer vision tasks.</p>
 <p>In this post, we will reimplement the AlexNet architecture with close reference to the original paper. We will try to stay as faithful to the published version as possible, but wherever we deviate, we will be careful to document it. The major discovery of AlexNet, which we will try to convey, is that training deep neural networks with many layers could dramatically increase performance, and the compute required to train neural networks of interesting depth could be provided by graphics programming units (GPUs).</p>
 <div id="4143c365-6f2b-40bd-9166-8e2f40dd5e9a" class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Import packages</span></span>
@@ -287,7 +287,7 @@ window.Quarto = {
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>                    drop_last<span class="op">=</span>drop_last,</span>
 <span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>                    batch_size<span class="op">=</span>BATCH_SIZE)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>ImageNet was considered a very hard dataset, because classical machine learning methods were not able to do well at this task. AlexNet won the 2012 challenge, doing better than the other submissions by a huge margin. In the next section, we’ll start explaining the architecture and the innovations in the paper which made this jump in performance possible.</p>
+<p>ImageNet was considered a very hard dataset, because classical machine learning methods were not able to do well at this task. In the next section, we’ll start explaining the architecture and the innovations in the paper which made this jump in performance possible.</p>
 </section>
 <section id="alexnet-architecture" class="level1">
 <h1>AlexNet architecture</h1>
@@ -381,7 +381,7 @@ window.Quarto = {
 <p>Throughout the paper, the authors have to balance the need for depth and training time with the computational resources available to them. That tension between scaling up compute while retaining efficiency has become a theme of deep learning research that continues until today.</p>
 </section>
 <section id="speeding-up-training-rectified-linear-unit-relu" class="level1">
-<h1>Speeding up training: Rectified Linear Unit (ReLU)</h1>
+<h1>Speeding up training: rectified linear unit (ReLU)</h1>
 <p>AlexNet was amongst the first major models to use the ReLU activation function, instead of the sigmoid or tanh functions which were commonly used in deep learning models at that time. The ReLU activation function allows for learning to occur at any positive value of the activation. The sigmoid or tanh functions have lower gradients at extreme values, which leads to a relatively higher proportion of ‘dead’ neurons which are not contributing to learning. The graph below exhibits this.</p>
 <div id="ecb2c452-997f-4ebe-8eaf-31d0cb501347" class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> activation_plot(start, end, step):</span>
@@ -427,13 +427,13 @@ window.Quarto = {
 <p>The ReLU function is designed to address this problem, and the paper shows evidence from experiments that this actually works. Another interesting way to solve this problem is to use learning rates which vary throughout the training as a function of the epoch number, and also across layers, depending on how many neurons are ‘dying’. Maybe there will another blog post which covers this set of very cool ideas.</p>
 </section>
 <section id="preventing-overfitting-dropout" class="level1">
-<h1>Preventing overfitting: Dropout</h1>
+<h1>Preventing overfitting: dropout</h1>
 <p>Given that the authors were training a model with more layers than was usual for that time, the other concern was to control overfitting. Overfitting in machine learning refers to a situation where a model learns to ‘memorize’ the training data so closely that it does not generalize well to unseen validation or test data. The solution is to use regularization, or in other words, restrict the complexity of the model, to force it to learn only those features or weights which are actually useful in performing the task that is being solved.</p>
 <p>One interesting regularization method is dropout. Training ensembles of models, or in other words multiple architectures, had been shown by that time to generalize better for many different kinds of machine learning models. However, for a neural network like this, which was already taking days to train, training multiple architectures was infeasible.</p>
 <p>Dropout had at the time been recently proposed as a way to simulate an ensemble. In dropout, hidden layer neuron outputs are randomly set to 0 with probability 0.5. This randomly deactivates certain neurons per layer in both the forward and backward pass, and so with each iteration, the training procedure is effectively using a different architecture. This also ensures that the remaining neurons do not co-adapt to each other - each neuron which survives the dropout layer in a given forward pass is forced to learn more robust and relevant features in conjunction with other random subsets of neurons, so it does not become too specialized. At test time, the output of each hidden layer neuron is multiplied by 0.5, and no neurons are discarded. This is so that the test time prediction distribution matches the training time distribution.</p>
 </section>
 <section id="preventing-overfitting-data-augmentation" class="level1">
-<h1>Preventing overfitting: Data augmentation</h1>
+<h1>Preventing overfitting: data augmentation</h1>
 <p>Data augmentation is a second technique used by the paper. The ImageNet images are high resolution 256 X 256 images. The authors cut out random 226 X 226 center patches from the image and perform two types of augmentation: 1) translations and inversions, and 2) changing the color and illumination of each extracted patch according to a particular scheme that they define. This increases the size of the training data by a factor of 2048x, though obviously there is a high correlation between many of the resulting samples. The paper reports that the model severely overfits without data augmentation. At test time, the model makes predictions on five 226 X 226 patches. These are the four corner patches of that size and the center patch.</p>
 <p>To change the color and illumination, the paper uses a scheme where it takes all the RGB pixel values across the training set, calculates the principle components via PCA, multiplies the found principle components by a quantity which is directly proportion to the corresponding eigenvalue times a single draw from a standard Guassian. This procedure approximately captures that object identity does not change with the color and illlumination of the picture. This is complicated to implement so for now we let it be, but maybe I will return to this blog post in the future and make this update.</p>
 </section>
@@ -442,11 +442,11 @@ window.Quarto = {
 <p>We are finally nearly ready for training. We define some useful utility functions below. There are two aspects of the training which are from the paper.</p>
 </section>
 <section id="training-stochastic-gradient-descent-with-weight-decay" class="level1">
-<h1>Training: Stochastic Gradient Descent with Weight Decay</h1>
+<h1>Training: stochastic gradient descent with weight Decay</h1>
 <p>Firstly, the paper uses stochastic gradient descent with a weight decay of 0.00005. The paper mentions that this is actually important for learning and not just regularization because it results in a lower training error, apart from controlling overfitting / validation error.</p>
 </section>
 <section id="training-learning-rate-schedule" class="level1">
-<h1>Training: Learning Rate Schedule</h1>
+<h1>Training: learning rate schedule</h1>
 <p>Secondly, the paper uses a schedule where the learning rate is reduced by 10x whenever the validation loss does not improve for ten epochs. We use these settings just because they are the ones used in the paper, even though as described above our dataset is different. Apart from these two configurations, the other functions just perform useful tasks like model loading and saving, and setting the device to use a GPU if one is available.</p>
 <div id="e5284ca0-651e-43fa-bb15-e6c6cc8212d5" class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> set_seed():</span>
@@ -750,11 +750,13 @@ Loss
 <h1>Conclusion</h1>
 <p>There you have it - AlexNet almost how it was implemented in the original paper. There are still a few components missing which I may come back and add in the future:</p>
 <ul>
-<li><p>We use max-pooling instead of the local response normalization used by the authors. The data augmentation scheme is missing, even though the authors explicitly say that AlexNet suffers from terrible overfitting without it. This is reflected in our own results with how jagged the validation accuracy curve is.</p></li>
+<li><p>We use max-pooling instead of the local response normalization used by the authors.</p></li>
+<li><p>The data augmentation scheme is missing, even though the authors explicitly say that AlexNet suffers from terrible overfitting without it. This is reflected in our own results with how jagged the validation accuracy curve is.</p></li>
 <li><p>There is no model parallelism implemented here because we don’t have multiple machines and in any case the hardware available to us is powerful enough to do training in a short amount of time on our reduced version of ImageNet.</p></li>
 <li><p>The learning rate schedule is different from what was used in the paper so it may be interesting to see the effects of changing this to be the same as in the paper.</p></li>
 </ul>
-<p>However, more or less, this implementation captures the spirit of the original paper. The effects of AlexNet were far-reaching. The authors showed that GPU hardware could be effectively used to train neural networks of greater depth than had been possible up until then. They only used 2 NVIDIA GPU cards, which obviously got everyone interested in the possibilities of using more compute to train deeper models! More importantly, they showed that this greater depth was not pointless, but actually resulted in performance that smashed all the existing records on the ImageNet object recognition dataset. This opened the door for deep learning research to start flourishing in the area of computer vision. Alex Krizhevsky and Ilya Sutskever, who then had a startup called DNN Inc.&nbsp;to conduct their neural network experiments, got acquired by Google. What came next? Deeper models and more explorations of how to scale up neural network size and complexity. Stay tuned for more in the next blog posts.</p>
+<p>The effects of AlexNet were far-reaching: The authors showed that GPU hardware could be effectively used to train neural networks of greater depth than had been possible up until then. They only used 2 NVIDIA GPU cards, which obviously got everyone interested in the possibilities of using more compute to train deeper models! More importantly, they showed that this greater depth was not pointless, but actually resulted in performance that smashed all the existing records on the ImageNet object recognition dataset.</p>
+<p>This opened the door for deep learning research to start flourishing in the area of computer vision. Alex Krizhevsky and Ilya Sutskever, who then had a startup called DNN Inc.&nbsp;to conduct their neural network experiments, got acquired by Google. What came next? Deeper models and more explorations of how to scale up neural network size and complexity. Stay tuned for more in the next blog posts.</p>
 
 
 </section>
