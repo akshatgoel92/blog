@@ -14,13 +14,14 @@ website:
 
 format:
   html:
-    theme: [sandstone, custom.scss]
+    minimal: true
+    theme: [cosmo, custom.scss]
     mainfont: arial
-    fontsize: 1rem
+    fontsize: 0.9rem
     css: styles.css
-    toc: true
-    toc-title: Contents
-    toc-location: left
+    toc: false
+    linestretch: 2.8rem
+    margin-left: 0.0rem
 
 
 
