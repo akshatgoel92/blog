@@ -201,7 +201,7 @@ window.Quarto = {
 <p>In the previous blog post, we implemented Lenet-5, which was released in 1998. The Lenet series of models were extremely good for the task of digit recognition. However, the MNIST dataset was relatively small, both in terms of total images and the number of classes available. Training neural nets for other more complicated tasks on larger datasets would have taken an infeasibly long time on CPUs. Other machine learning approaches, like support vector machines, which were feasible to train, gained prominence during this time.</p>
 <p>The next big breakthrough for deep learning came in 2012, with the release of AlexNet. Jointly authored by Alex Krizhevsky, after whom the model is named, with Ilya Sutskever and Geoffrey Hinton, AlexNet won the Imagenet competition in 2012 by a very big margin, ~10% in error rate, demonstrating that deep learning approaches could be the state-of-the art in complicated computer vision tasks.</p>
 <p>In this post, we will reimplement the AlexNet architecture with close reference to the original paper. We will try to stay as faithful to the published version as possible, but wherever we deviate, we will be careful to document it. The major discovery of AlexNet, which we will try to convey, is that training deep neural networks with many layers could dramatically increase performance, and the compute required to train neural networks of interesting depth could be provided by graphics programming units (GPUs).</p>
-<div id="4143c365-6f2b-40bd-9166-8e2f40dd5e9a" class="cell">
+<div id="4143c365-6f2b-40bd-9166-8e2f40dd5e9a" class="cell" data-vscode="{&quot;languageId&quot;:&quot;python&quot;}">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Import packages</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
@@ -232,14 +232,14 @@ window.Quarto = {
 <h1>The ImageNet object recognition task</h1>
 <p>The ImageNet dataset consists of 1.5 million images labelled with 1000 different classes. A famous machine learning competition called the ImageNet Large Scale Visual Recognition Challenge (ILSVRC) asks submissions to recognize or in other words classify an image into the different classes.</p>
 <p>The primary metrics that the competition used were the top-5 error and top-1 error, which are defined respectively as follows: the submissions can make up to 5 predictions per image from the 1000 classes, and a top-5 error is defined to have happened when the correct class is not present in these predictions. The top-1 error is equivalent to the accuracy: the submissions can make one prediction per image from the 1000 classes, and a top-1 error is defined to have happened when the correct class is not equal to this prediction.</p>
-<div id="05c0b23b-f3bd-432f-8687-e7700afb6d91" class="cell">
+<div id="05c0b23b-f3bd-432f-8687-e7700afb6d91" class="cell" data-vscode="{&quot;languageId&quot;:&quot;python&quot;}">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_dataset(IMG_DIR, transforms_list):</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Get dataset</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> datasets.ImageFolder(IMG_DIR, transforms.Compose(transforms_list))</span></code></pre></div>
 </div>
-<div id="5d9e5d96-86e5-4688-bf95-d9e9c0e312fa" class="cell">
+<div id="5d9e5d96-86e5-4688-bf95-d9e9c0e312fa" class="cell" data-vscode="{&quot;languageId&quot;:&quot;python&quot;}">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_dataloader(dataset, BATCH_SIZE, shuffle<span class="op">=</span><span class="va">True</span>, </span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                   pin_memory<span class="op">=</span><span class="va">True</span>, num_workers<span class="op">=</span><span class="dv">4</span>, </span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>                   drop_last<span class="op">=</span><span class="va">True</span>, subset_data<span class="op">=</span><span class="va">False</span>, </span>
@@ -260,12 +260,12 @@ window.Quarto = {
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>                    drop_last<span class="op">=</span>drop_last,</span>
 <span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>                    batch_size<span class="op">=</span>BATCH_SIZE)</span></code></pre></div>
 </div>
-<p>ImageNet was considered a very hard dataset, because classical machine learning methods were not able to do well at this task. In the next section, we’ll start explaining the architecture and the innovations in the paper which made this jump in performance possible.</p>
+<p>ImageNet was considered a hard dataset, because classical machine learning methods were not able to do well at this task. In the next section, we’ll start explaining the architecture and the innovations in the paper which made this jump in performance possible.</p>
 </section>
 <section id="alexnet-architecture" class="level1">
 <h1>AlexNet architecture</h1>
 <p>ImageNet is so large that reaching good performance on object recognition requires a model far deeper, with more layers and more filters per layer, than had been trained at the time. The AlexNet architecture consists of five convolutional layers followed by three fully connected layers, which seems small by today’s standards but was very large by the standards of that time. Training this architecture on a CPU or even a single GPU for long enough to reach a good level of performance was infeasible with the hardware then available. The designers of AlexNet realized that they would have to get creative to get good results, and so they came up with many tricks to speed up training, some of which we talk about below.</p>
-<div id="fc3ad8ac-852f-4aff-aa49-e118e156fdc7" class="cell">
+<div id="fc3ad8ac-852f-4aff-aa49-e118e156fdc7" class="cell" data-vscode="{&quot;languageId&quot;:&quot;python&quot;}">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AlexNet(nn.Module):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_classes):</span>
@@ -356,7 +356,7 @@ window.Quarto = {
 <section id="speeding-up-training-rectified-linear-unit-relu" class="level1">
 <h1>Speeding up training: rectified linear unit (ReLU)</h1>
 <p>AlexNet was amongst the first major models to use the ReLU activation function, instead of the sigmoid or tanh functions which were commonly used in deep learning models at that time. The ReLU activation function allows for learning to occur at any positive value of the activation. The sigmoid or tanh functions have lower gradients at extreme values, which leads to a relatively higher proportion of ‘dead’ neurons which are not contributing to learning. The graph below exhibits this.</p>
-<div id="ecb2c452-997f-4ebe-8eaf-31d0cb501347" class="cell">
+<div id="ecb2c452-997f-4ebe-8eaf-31d0cb501347" class="cell" data-vscode="{&quot;languageId&quot;:&quot;python&quot;}">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> activation_plot(start, end, step):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Activation plot</span></span>
@@ -374,7 +374,7 @@ window.Quarto = {
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    plt.legend()</span>
 <span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    plt.show()</span></code></pre></div>
 </div>
-<div id="07eb3e0e-6372-484e-a552-e9dec7e3cd72" class="cell">
+<div id="07eb3e0e-6372-484e-a552-e9dec7e3cd72" class="cell" data-vscode="{&quot;languageId&quot;:&quot;python&quot;}">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>start <span class="op">=</span> <span class="op">-</span><span class="dv">2</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>end <span class="op">=</span> <span class="dv">2</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>step <span class="op">=</span> <span class="fl">1e-4</span></span>
@@ -415,13 +415,13 @@ window.Quarto = {
 <p>We are finally nearly ready for training. We define some useful utility functions below. There are two aspects of the training which are from the paper.</p>
 </section>
 <section id="training-stochastic-gradient-descent-with-weight-decay" class="level1">
-<h1>Training: stochastic gradient descent with weight Decay</h1>
+<h1>Training: stochastic gradient descent with weight decay</h1>
 <p>Firstly, the paper uses stochastic gradient descent with a weight decay of 0.00005. The paper mentions that this is actually important for learning and not just regularization because it results in a lower training error, apart from controlling overfitting / validation error.</p>
 </section>
 <section id="training-learning-rate-schedule" class="level1">
 <h1>Training: learning rate schedule</h1>
 <p>Secondly, the paper uses a schedule where the learning rate is reduced by 10x whenever the validation loss does not improve for ten epochs. We use these settings just because they are the ones used in the paper, even though as described above our dataset is different. Apart from these two configurations, the other functions just perform useful tasks like model loading and saving, and setting the device to use a GPU if one is available.</p>
-<div id="e5284ca0-651e-43fa-bb15-e6c6cc8212d5" class="cell">
+<div id="e5284ca0-651e-43fa-bb15-e6c6cc8212d5" class="cell" data-vscode="{&quot;languageId&quot;:&quot;python&quot;}">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> set_seed():</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Set random seed</span></span>
@@ -478,7 +478,7 @@ window.Quarto = {
 </section>
 <section id="training-loop" class="level1">
 <h1>Training loop</h1>
-<div id="152c0d36-dbce-4fe7-9b7c-7c6c159cb681" class="cell">
+<div id="152c0d36-dbce-4fe7-9b7c-7c6c159cb681" class="cell" data-vscode="{&quot;languageId&quot;:&quot;python&quot;}">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> training_loop(LOG_DIR, NUM_CLASSES, model_name, </span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                  DEVICE_IDS, TRAIN_IMG_DIR, VAL_IMG_DIR, transforms_list,</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                  BATCH_SIZE, N_SAMPLE, optimizer_name, other_params, NUM_EPOCHS,</span>
@@ -656,7 +656,7 @@ window.Quarto = {
 </section>
 <section id="execution" class="level1">
 <h1>Execution</h1>
-<div id="00dd70f3-0131-4fb9-a03f-934a2c32352a" class="cell">
+<div id="00dd70f3-0131-4fb9-a03f-934a2c32352a" class="cell" data-vscode="{&quot;languageId&quot;:&quot;python&quot;}">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    MODEL_NAME <span class="op">=</span> <span class="st">'alexnet'</span></span>
