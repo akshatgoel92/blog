@@ -6,9 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2025-01-12">
 
-<title>Digit Recognition Using Lenet – Akshat’s Notes</title>
+<title>Introduction – Akshat’s Notes</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -163,23 +162,14 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Digit Recognition Using Lenet</h1>
-                                <div class="quarto-categories">
-                <div class="quarto-category">ml</div>
-              </div>
-                  </div>
+      <h1 class="title">Introduction</h1>
+                      </div>
   </div>
     
   
   <div class="quarto-title-meta">
 
       
-      <div>
-      <div class="quarto-title-meta-heading">Published</div>
-      <div class="quarto-title-meta-contents">
-        <p class="date">January 12, 2025</p>
-      </div>
-    </div>
     
       
     </div>
@@ -196,10 +186,8 @@ window.Quarto = {
 
 
 
-<section id="introduction" class="level1">
-<h1>Introduction</h1>
-<p>In this post, we implement Lenet, widely acknowledged to be one of the first convolutional neural networks that was used in a practical setting, and also amongst the first to be trained via the backpropogation algorithm rather than being hand-designed. The original Lenet model was developed by Yann LeCun, Leon Bottou, Yoshua Bengio and Patrick Haffner, to classify numerical digits from 0 to 9. It was accurate enough that many banks adopted it to scan the digits on the millons of checks deposited at ATMs every day. In fact, there are some ATMs which still today use the original code from the creators of Lenet!</p>
-<div id="e80e8b4c-f501-43d8-bb02-1fe75ce881db" class="cell">
+<p>In this post, we implement LeNet, widely acknowledged to be one of the first convolutional neural networks that was used in a practical setting, and also amongst the first to be trained via the backpropogation algorithm rather than being hand-designed. The original LeNet model was developed by Yann LeCun, Leon Bottou, Yoshua Bengio and Patrick Haffner, to classify numerical digits from 0 to 9. It was accurate enough that many banks adopted it to scan the digits on the millons of checks deposited at ATMs every day. In fact, there are some ATMs which still today use the original code from the creators of LeNet!</p>
+<div id="e80e8b4c-f501-43d8-bb02-1fe75ce881db" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torchvision</span>
@@ -212,18 +200,17 @@ window.Quarto = {
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.utils.data <span class="im">import</span> DataLoader</span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.utils.data.dataset <span class="im">import</span> random_split</span></code></pre></div>
 </div>
-</section>
 <section id="the-architecture" class="level1">
 <h1>The architecture</h1>
-<p>We will implement Lenet-5, the version of the model that was used widely by banks to process checks at ATMs. Lenet-5 has seven layers. Three of these are convolutional layers, two are pooling layers, two are fully connected layers. This is a very small network by modern standards. Many neural network architectures published in the last decade have tens of layers, and some even have over one hundred layers.</p>
-<p>However, old and small does not mean weak. We’ll see that for the problem it was designed to solve, gray-scale hand-written digit recognition, Lenet-5 does extremely well. It actually made it to production at a large scale and performed very accurately and reliably, which is more than can be said for many far larger and fancier models being developed at companies today.</p>
-<p>We stick as closely as possible to the original reference implementation that is described in the paper. Doing this, it turns out, is not straightforward. This is because the paper was written a long time back, before the most recent few years of deep learning research. To complicate things, many implementations of Lenet available online deviate in ways big and small from the original paper, usually by incorporating convenient simplifications, and also on findings that were not known when Lenet was first released. We point these out where we can, because at least for me, it was interesting to see all the small ways in which the impact of so much research effort ends up being reflected in even ‘simple’ code.</p>
+<p>We will implement LeNet-5, the version of the model that was used widely by banks to process checks at ATMs. LeNet-5 has seven layers. Three of these are convolutional layers, two are pooling layers, two are fully connected layers. This is a very small network by modern standards. Many neural network architectures published in the last decade have tens of layers, and some even have over one hundred layers.</p>
+<p>However, old and small does not mean weak. We’ll see that for the problem it was designed to solve, gray-scale hand-written digit recognition, LeNet-5 does extremely well. It actually made it to production at a large scale and performed very accurately and reliably, which is more than can be said for many far larger and fancier models being developed at companies today.</p>
+<p>We stick as closely as possible to the original reference implementation that is described in the paper. Doing this, it turns out, was not as straightforward as it seems. This is because the paper was written a long time before the most recent few years of deep learning research. To complicate the issue, many implementations of LeNet that are available online deviate in ways big and small from the original paper, usually by incorporating simplifications based on convenience, and also on findings in deep learning that were not known when LeNet was first released. We point these out where we can, because at least for me, it was interesting to see all the small ways in which the impact of so much research effort ends up being reflected in even ‘simple’ code.</p>
 </section>
 <section id="lenet-pooling-layer" class="level1">
-<h1>Lenet pooling layer</h1>
-<p>The Lenet pooling layer as described in the original paper is not commonly used today. Average pooling and max. pooling have come to be more commonly used, but they had not been discovered or experimented with at the time the authors were writing. Note that most online implementations do not implement the original precise pooling layer described in the paper.</p>
-<p>The paper actually pools information after the convolutional layers in a specific way. First, 2 by 2 kernel with a stride of 2 is passed over the input. These parameters are chosen to ensure that the kernel neighborhoods don’t overlap. Each of the 4 entries in the kernel neighborhood are then summed, and passed through a linear layer with learned coefficients. In our implementation, to accomplish the summation, we use the LPPool2d method from PyTorch, with a parameter of 1 and stride of 2. The documentation tells us that this is exactly what we want.</p>
-<div id="e0ae67b6-db27-49e9-8cf2-f4d0762f62ad" class="cell">
+<h1>LeNet pooling layer</h1>
+<p>The LeNet pooling layer as described in the original paper is not commonly used today. First average pooling and then max. pooling came to be more commonly used, but they had not been discovered or experimented with at the time the authors were writing. Note that most online implementations do not implement the original precise pooling layer described in the paper, and either use max. pooling or average pooling.</p>
+<p>The paper actually says that to pool information after the convolutional layers, they use a 2 by 2 kernel with a stride of 2 to ensure that the kernel neighborhoods don’t overlap. Each of the 4 entries in the kernel neighborhood are summed, and then passed through a linear layer with learned coefficients. In our implementation, to accomplish the summation, we use the LPPool2d method from PyTorch, with a parameter of 1 and stride of 2. The documentation tells us that this is exactly what we want.</p>
+<div id="e0ae67b6-db27-49e9-8cf2-f4d0762f62ad" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LenetPool(nn.Module):</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Subsampling layer from LeCun et al. (1987)"""</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, kernel_size, sum_stride, in_features, out_features):</span>
@@ -239,11 +226,11 @@ window.Quarto = {
 </div>
 </section>
 <section id="lenet-activation-function" class="level1">
-<h1>Lenet activation function</h1>
-<p>Just like the Lenet pooling layer, the activation function described in the original paper is not commonly used today. Rectified Linear Units (ReLU) and its variants and relatives have become the default activation, and there has been a move away from sigmoidal functions like the sigmoid and tanh. This is largely to do with learning dynamics - these functions become very flat near zero and at large magnitudes, which results in low gradients and hence slower learning. However, the authors didn’t know this when they were designing Lenet. Furthermore, the activation function used in Lenet is not a vanilla tanh. There are some tweaks that the authors have made which they thought would improve performance.</p>
-<p>The first modification is that that the input to the activation is first passed through a linear layer, or in the paper’s language, multipled by a learned weight <span class="math inline">\(S\)</span> to adaptively set the slope of the activation function near its origin. Secondly, the activation function output is then scaled by <span class="math inline">\(A\)</span>, a value that is hard-coded in the paper to <span class="math inline">\(1.7159\)</span>.</p>
-<p>Online implementations tend to either use ReLU or just straight up tanh without these modifications, and performance doesn’t seem to be affected much. But we stick to this implementation as that is what’s in the paper. It’s cool to think that actually going through the original work makes all these differences show up.</p>
-<div id="df7218cf-aa01-4307-beba-6489d2db8a57" class="cell">
+<h1>LeNet activation function</h1>
+<p>Just like the LenNet pooling layer, the activation function described in the original paper is not commonly used today. Rectified Linear Units (ReLU) and its variants and relatives have become the default activation, and there has been a move away from sigmoidal functions like the sigmoid and tanh. This is largely to do with learning dynamics - these functions become very flat near zero and at large magnitudes, which results in low gradients and hence slower learning. However, the authors didn’t know this when they were designing LeNet. Furthermore, the activation function used in LeNet is not a vanilla tanh. There are some tweaks that the authors have made to improve performance, or so they claim.</p>
+<p>The first modification is that that the input to the activation is first passed through a linear layer, or in the paper’s language, multipled by a learned weight <span class="math inline">\(S\)</span> to adaptively set the slope of the activation function near its origin. Secondly, the value that the activation function outputs is then scaled by <span class="math inline">\(A\)</span>, a value that is hard-coded in the paper to <span class="math inline">\(1.7159\)</span>.</p>
+<p>Online implementations tend to either use ReLU or just straight up tanh without these modifications, and performance doesn’t seem to be affected much. But we stick to this implementation as that is what’s in the paper, and it’s also cool to think that actually going through the paper makes all these differences show up.</p>
+<div id="df7218cf-aa01-4307-beba-6489d2db8a57" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LenetSigmoid(nn.Module):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Activation function for Lenet-5"""</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, in_features, out_features):</span>
@@ -261,13 +248,13 @@ window.Quarto = {
 </div>
 </section>
 <section id="the-lenet-architecture" class="level1">
-<h1>The Lenet architecture</h1>
-<p>The Lenet architecture apart from this is straightforward, and the network given below is a faithful reproduction, apart from two interesting changes.</p>
+<h1>The LeNet architecture</h1>
+<p>The LeNet architecture apart from this is straightforward, and the network given below is a faithful reproduction, apart from two interesting changes.</p>
 <p>The first change is layer C3. In the original paper, the authors are careful to note that not all feature maps from S2’s output are sent to every filter in C3. Instead, there is a scheme in which each input feature map is sent to only three of the 16 filters in C3. There are two reasons for this: 1) to encourage individual features to adapt and 2) to keep the number of connections manageable due to the limited amount of computational resources available at the time. This first change reminded me of dropout regularization, which it predates by quite some time! This would have taken more work than I’m interested in putting in at the moment, but might make for a nice future extension.</p>
 <p>The second change is to the output layer. The authors actually use an RBF network as an output layer. They get the network to output 84 values which is then compared to a 7 by 12 bitmap version of the target image. The class with the lowest cross-entropy loss is selected. We don’t do this because the softmax final layer for classifiers is very standard these days, and also because it doesn’t seem to effect performance much, but this is another nice future exercise, especially to keep the spirit of being authentic to what is actually in the paper.</p>
-<div id="238c6f28-da8b-4c83-92f3-c405eea5d8ee" class="cell">
+<div id="238c6f28-da8b-4c83-92f3-c405eea5d8ee" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Lenet(nn.Module):</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Lenet-5 architecture"""</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""LeNet-5 architecture"""</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_classes):</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>(Lenet, <span class="va">self</span>).<span class="fu">__init__</span>()</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        </span>
@@ -312,14 +299,14 @@ window.Quarto = {
 <span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>                                    <span class="va">self</span>.f7,)</span>
 <span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, x):</span>
-<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""Lenet-5 forward pass"""</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>        <span class="co">"""LeNet-5 forward pass"""</span></span>
 <span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.layers(x)</span></code></pre></div>
 </div>
 </section>
 <section id="testing-for-shapes" class="level1">
 <h1>Testing for shapes</h1>
 <p>One side note while doing this: testing to make sure that we are getting the correct shapes turned out to be important. Given below is a very simple utility function that prints out the output shapes from applying each layer in sequence. One silly mistake that I was making while initially doing this was testing out without a batch dimension, and so the training loop wasn’t working.</p>
-<div id="4558daf3-5e9c-4061-a6e3-ce9cc48bee8b" class="cell">
+<div id="4558daf3-5e9c-4061-a6e3-ce9cc48bee8b" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run_tests(shape, num_classes):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Test the forward pass for shapes"""</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    </span>
@@ -344,8 +331,8 @@ window.Quarto = {
 </section>
 <section id="training-evaluation-results" class="level1">
 <h1>Training / evaluation results</h1>
-<p>Given below is a standard training and evaluation loop. Note that during the preprocessing we had to resize the images to be 32 by 32 because for some reason they weren’t that size in the PyTorch dataset that we downloaded. But apart from that we just convert all the images to tensors, and apply a normalization. Note that since I am on an M1 Mac, I can use the MPS device to make sure the GPU is utilized. The results show that the loss curve decreases pretty smoothly throughout training, and we get a very high test accuracy of more than 97 %, very similar to the results in the original paper!</p>
-<div id="eae875d7-b884-47f3-8c41-61a9f629437a" class="cell">
+<p>Given below is a standard evaluation loop. Note that during the preprocessing we had to resize the images to be 32 by 32 because for some reason they weren’t that size in the PyTorch dataset that we downloaded. But apart from that we just convert all the images to tensors, and apply a normalization. Note that since I am on an M1 Mac, I can use the MPS device to make sure the GPU is utilized. The results show that the loss curve decreases pretty smoothly throughout training, and we get a very high test accuracy of 98.2%, very similar to the results in the original paper!</p>
+<div id="eae875d7-b884-47f3-8c41-61a9f629437a" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    device <span class="op">=</span> torch.device(<span class="st">"mps"</span> <span class="cf">if</span> torch.backends.mps.is_available() <span class="cf">else</span> <span class="st">"cpu"</span>)</span>
@@ -419,131 +406,131 @@ window.Quarto = {
 <span id="cb6-71"><a href="#cb6-71" aria-hidden="true" tabindex="-1"></a>    accuracy <span class="op">=</span> <span class="dv">100</span> <span class="op">*</span> correct <span class="op">/</span> total</span>
 <span id="cb6-72"><a href="#cb6-72" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Test Accuracy: </span><span class="sc">{</span>accuracy<span class="sc">:.2f}</span><span class="ss">%"</span>)</span></code></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:17, 26.69it/s]</code></pre>
+<pre><code>469it [00:15, 29.71it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 1/20, Loss: 0.3028</code></pre>
+<pre><code>Epoch 1/20, Loss: 0.3149</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:17, 26.87it/s]</code></pre>
+<pre><code>469it [00:11, 42.49it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 2/20, Loss: 0.1270</code></pre>
+<pre><code>Epoch 2/20, Loss: 0.1349</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.61it/s]</code></pre>
+<pre><code>469it [00:11, 42.62it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 3/20, Loss: 0.0970</code></pre>
+<pre><code>Epoch 3/20, Loss: 0.1005</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.85it/s]</code></pre>
+<pre><code>469it [00:10, 42.64it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 4/20, Loss: 0.0822</code></pre>
+<pre><code>Epoch 4/20, Loss: 0.0848</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.26it/s]</code></pre>
+<pre><code>469it [00:11, 42.52it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 5/20, Loss: 0.0746</code></pre>
+<pre><code>Epoch 5/20, Loss: 0.0780</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:16, 29.07it/s]</code></pre>
+<pre><code>469it [00:11, 42.50it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 6/20, Loss: 0.0672</code></pre>
+<pre><code>Epoch 6/20, Loss: 0.0716</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.37it/s]</code></pre>
+<pre><code>469it [00:10, 42.68it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 7/20, Loss: 0.0647</code></pre>
+<pre><code>Epoch 7/20, Loss: 0.0649</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.53it/s]</code></pre>
+<pre><code>469it [00:10, 42.96it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 8/20, Loss: 0.0597</code></pre>
+<pre><code>Epoch 8/20, Loss: 0.0620</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.88it/s]</code></pre>
+<pre><code>469it [00:11, 42.58it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 9/20, Loss: 0.0532</code></pre>
+<pre><code>Epoch 9/20, Loss: 0.0624</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.61it/s]</code></pre>
+<pre><code>469it [00:11, 39.83it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 10/20, Loss: 0.0555</code></pre>
+<pre><code>Epoch 10/20, Loss: 0.0563</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.67it/s]</code></pre>
+<pre><code>469it [00:11, 42.15it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 11/20, Loss: 0.0521</code></pre>
+<pre><code>Epoch 11/20, Loss: 0.0536</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.74it/s]</code></pre>
+<pre><code>469it [00:11, 42.61it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 12/20, Loss: 0.0520</code></pre>
+<pre><code>Epoch 12/20, Loss: 0.0547</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.47it/s]</code></pre>
+<pre><code>469it [00:11, 42.59it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 13/20, Loss: 0.0511</code></pre>
+<pre><code>Epoch 13/20, Loss: 0.0546</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.45it/s]</code></pre>
+<pre><code>469it [00:10, 42.75it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 14/20, Loss: 0.0472</code></pre>
+<pre><code>Epoch 14/20, Loss: 0.0527</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.34it/s]</code></pre>
+<pre><code>469it [00:11, 39.90it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 15/20, Loss: 0.0520</code></pre>
+<pre><code>Epoch 15/20, Loss: 0.0525</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:16, 28.73it/s]</code></pre>
+<pre><code>469it [00:11, 42.42it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 16/20, Loss: 0.0474</code></pre>
+<pre><code>Epoch 16/20, Loss: 0.0514</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.16it/s]</code></pre>
+<pre><code>469it [00:10, 42.84it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 17/20, Loss: 0.0471</code></pre>
+<pre><code>Epoch 17/20, Loss: 0.0502</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 29.87it/s]</code></pre>
+<pre><code>469it [00:10, 43.04it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 18/20, Loss: 0.0473</code></pre>
+<pre><code>Epoch 18/20, Loss: 0.0550</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.37it/s]</code></pre>
+<pre><code>469it [00:10, 43.17it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 19/20, Loss: 0.0467</code></pre>
+<pre><code>Epoch 19/20, Loss: 0.0523</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>469it [00:15, 30.50it/s]</code></pre>
+<pre><code>469it [00:10, 42.65it/s]</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 20/20, Loss: 0.0438
-Test Accuracy: 97.86%</code></pre>
+<pre><code>Epoch 20/20, Loss: 0.0505
+Test Accuracy: 97.63%</code></pre>
 </div>
 </div>
 </section>
 <section id="conclusion" class="level1">
 <h1>Conclusion</h1>
-<p>There you have it, Lenet-5 in all (most) of its splendor! The most fun I had while writing this post is realizing the small implementation differences between the original paper and different versions online, including some textbooks! It turns out, which in many ways is expected, that these changes don’t impact performance much, but they were still surprising to see. Lenet was one of the first examples of how neural network approaches could be competitive with the then dominant machine learning paradigm of support vector machines, and served as an inspiration to the early deep learning pioneers that their ideas were promising and could be turned into useful innovations.</p>
+<p>There you have it, LeNet-5 in all (most) of its splendor! The most fun I had while writing this post is realizing the small implementation differences between the original paper and different versions online, including some textbooks. It turns out, which in many ways is expected, that these changes don’t impact performance much, but they were still surprising to see. LeNet was one of the first examples of how neural network approaches could be competitive with the then dominant machine learning paradigm of support vector machines, and served as an inspiration to the early deep learning pioneers that their ideas were promising and could be turned into useful innovations.</p>
 
 
 </section>
