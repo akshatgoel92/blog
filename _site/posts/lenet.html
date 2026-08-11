@@ -6,8 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="dcterms.date" content="2025-01-13">
 
-<title>Introduction – Akshat’s Notes</title>
+<title>Digit Recognition using LeNet-5 – Akshat’s Notes</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -162,14 +163,23 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Introduction</h1>
-                      </div>
+      <h1 class="title">Digit Recognition using LeNet-5</h1>
+                                <div class="quarto-categories">
+                <div class="quarto-category">ml</div>
+              </div>
+                  </div>
   </div>
     
   
   <div class="quarto-title-meta">
 
       
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">January 13, 2025</p>
+      </div>
+    </div>
     
       
     </div>
@@ -186,6 +196,8 @@ window.Quarto = {
 
 
 
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
 <p>In this post, we implement LeNet, widely acknowledged to be one of the first convolutional neural networks that was used in a practical setting, and also amongst the first to be trained via the backpropogation algorithm rather than being hand-designed. The original LeNet model was developed by Yann LeCun, Leon Bottou, Yoshua Bengio and Patrick Haffner, to classify numerical digits from 0 to 9. It was accurate enough that many banks adopted it to scan the digits on the millons of checks deposited at ATMs every day. In fact, there are some ATMs which still today use the original code from the creators of LeNet!</p>
 <div id="e80e8b4c-f501-43d8-bb02-1fe75ce881db" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
@@ -200,6 +212,7 @@ window.Quarto = {
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.utils.data <span class="im">import</span> DataLoader</span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.utils.data.dataset <span class="im">import</span> random_split</span></code></pre></div>
 </div>
+</section>
 <section id="the-architecture" class="level1">
 <h1>The architecture</h1>
 <p>We will implement LeNet-5, the version of the model that was used widely by banks to process checks at ATMs. LeNet-5 has seven layers. Three of these are convolutional layers, two are pooling layers, two are fully connected layers. This is a very small network by modern standards. Many neural network architectures published in the last decade have tens of layers, and some even have over one hundred layers.</p>
