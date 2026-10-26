@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/array_cpp.html",
       "/posts/list_cpp.html",
       "/posts/alexnet.html",
       "/posts/lenet.html",

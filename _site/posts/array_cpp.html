@@ -1,0 +1,2376 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.39">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2028-02-10">
+
+<title>Building an numpy style array in Cpp – Akshat’s Notes</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-3403d42fd16bc8d7bce65d37fe5a451c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed fullcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">Akshat’s Notes</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Building an numpy style array in Cpp</h1>
+                                <div class="quarto-categories">
+                <div class="quarto-category">cpp</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">February 10, 2028</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<section id="akshat" class="level4">
+<h4 data-anchor-id="akshat">Akshat</h4>
+<p>What will the next project be?</p>
+</section>
+<section id="chatgpt" class="level4">
+<h4 data-anchor-id="chatgpt">ChatGPT</h4>
+<p>A small <strong>Tensor class</strong> would be the natural next project. Not a full deep-learning framework. Just enough to move from “I own a 1D dynamic buffer” to “I own multidimensional numerical data.” The first version could support:</p>
+<ul>
+<li>contiguous storage</li>
+<li>a shape like <code>{2, 3, 4}</code></li>
+<li>converting multidimensional indices into one flat offset</li>
+<li>element access</li>
+<li>copy/move behavior inherited from what you just learned</li>
+<li>probably templating it over element type</li>
+</ul>
+<p>That would connect directly to where you want to go later: ggml, PyTorch internals, numerical kernels, memory layout.</p>
+<p>And importantly, it gives us a genuinely new problem rather than polishing <code>List</code> forever.</p>
+</section>
+<section id="akshat-1" class="level4">
+<h4 data-anchor-id="akshat-1">Akshat</h4>
+<p>Let’s call it a <code>numpy</code> array, right?</p>
+</section>
+<section id="chatgpt-1" class="level4">
+<h4 data-anchor-id="chatgpt-1">ChatGPT</h4>
+<p>Yes — that’s a better name for what we’re actually building. Let’s make a tiny <strong>NumPy-style <code>Array</code> class</strong> rather than call it a Tensor. Conceptually, we’ll aim for something like:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Array<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> a<span class="op">({</span><span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">});</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>a<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">)</span> <span class="op">=</span> <span class="fl">4.5</span><span class="op">;</span></span></code></pre></div>
+<p>The useful new ideas will be multidimensional shape, flat contiguous storage, index-to-offset calculation, and templating.</p>
+<p>We’ll keep it much smaller than NumPy, obviously. But the mental model is closer to <code>numpy.ndarray</code> than to a deep-learning tensor.</p>
+</section>
+<section id="akshat-2" class="level4">
+<h4 data-anchor-id="akshat-2">Akshat</h4>
+<p>Cool. Tell me how to go.</p>
+</section>
+</section>
+<section id="class-representation" class="level1">
+<h1>Class Representation</h1>
+<section id="chatgpt-2" class="level4">
+<h4 data-anchor-id="chatgpt-2">ChatGPT</h4>
+<p>Start the next project as a <strong>desktop <code>Array&lt;T&gt;</code> class</strong>. First milestone only - make this possible conceptually:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Array<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> a<span class="op">({</span><span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">});</span></span></code></pre></div>
+<p>and have it own enough contiguous storage for 6 <code>double</code>s.</p>
+<p>Your first design task is to decide what state the class needs to store.</p>
+<p>Hint: unlike <code>List</code>, knowing only <code>length</code> is not enough anymore. You need to preserve the <strong>shape</strong> too.</p>
+<p>Write the class skeleton with just the private member variables you think you need. Don’t implement indexing yet.</p>
+</section>
+<section id="akshat-3" class="level4">
+<h4 data-anchor-id="akshat-3">Akshat</h4>
+<pre class="text"><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+
+
+class Array{
+    private:
+        int rows;
+        int width;
+    
+}</code></pre>
+</section>
+<section id="chatgpt-3" class="level4">
+<h4 data-anchor-id="chatgpt-3">ChatGPT</h4>
+<p>That’s a reasonable start for a <strong>2D-only</strong> array, but if we really want NumPy-like behavior later, <code>rows</code> and <code>width</code> are too specific.</p>
+<p>Hint only: instead of separate dimension variables, think about storing the dimensions in a container.</p>
+<p>Also, you’re currently missing the actual numerical storage.</p>
+<p>So ask yourself for just these two things:</p>
+<ul>
+<li>how do I represent a shape like <code>{2, 3, 4}</code>?</li>
+<li>where do the actual elements live?</li>
+</ul>
+</section>
+<section id="akshat-4" class="level4">
+<h4 data-anchor-id="akshat-4">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    private:
+        std::vector&lt;int&gt; shape;
+        std::vector&lt;std::vector&lt;int&gt;&gt; elements;
+    
+}</code></pre>
+</section>
+<section id="chatgpt-4" class="level4">
+<h4 data-anchor-id="chatgpt-4">ChatGPT</h4>
+<p><code>shape</code> is right.</p>
+<p>For <code>elements</code>, though, <code>std::vector&lt;std::vector&lt;int&gt;&gt;</code> still assumes <strong>2 dimensions</strong>.</p>
+<p>Hint: keep the actual data <strong>flat and contiguous</strong>, just like you did with <code>Matrix</code>.</p>
+<p>So think more like:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> shape<span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> elements<span class="op">;</span></span></code></pre></div>
+<p>Then <code>shape = {2, 3, 4}</code> tells you how to interpret the flat buffer.</p>
+</section>
+<section id="akshat-5" class="level4">
+<h4 data-anchor-id="akshat-5">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    private:
+        std::vector&lt;int&gt; shape;
+        std::vector&lt;double&gt; elements;
+    
+}</code></pre>
+</section>
+<section id="chatgpt-5" class="level4">
+<h4 data-anchor-id="chatgpt-5">ChatGPT</h4>
+<p>Good. That’s the right representation for now.</p>
+</section>
+</section>
+<section id="allocating-storage-and-initializing-elements-based-on-the-shape" class="level1">
+<h1>Allocating storage and initializing <code>elements</code> based on the shape</h1>
+<p>Next question only. For:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>shape <span class="op">=</span> <span class="op">{</span><span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">}</span></span></code></pre></div>
+<p>how many <code>double</code>s should <code>elements</code> contain?</p>
+<p>Don’t code yet — just tell me the number and how you got it.</p>
+<section id="akshat-6" class="level4">
+<h4 data-anchor-id="akshat-6">Akshat</h4>
+<p><code>24</code>. <code>2</code> 2-dimensional sub-tensors each with 3 rows and 4 columns, which is <code>2 x 3 x 4</code> total elements.</p>
+</section>
+<section id="chatgpt-6" class="level4">
+<h4 data-anchor-id="chatgpt-6">ChatGPT</h4>
+<p>Exactly.</p>
+<p>So the next thing your constructor needs to do is:</p>
+<ul>
+<li>store the shape</li>
+<li>compute the product of all dimensions</li>
+<li>allocate that many <code>double</code>s in <code>elements</code></li>
+</ul>
+<p>Hint only: your constructor input could naturally be something like:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>Array<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> shape<span class="op">)</span></span></code></pre></div>
+<p>You have:</p>
+<pre><code>class Array {
+private:
+    std::vector&lt;int&gt; shape;
+    std::vector&lt;double&gt; elements;
+};</code></pre>
+<p>Next task: write the constructor so that:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>Array a<span class="op">({</span><span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">});</span></span></code></pre></div>
+<p>stores <code>{2, 3, 4}</code> as the shape and creates storage for <code>24</code> doubles.</p>
+<p>Try writing that constructor yourself.</p>
+</section>
+<section id="akshat-7" class="level4">
+<h4 data-anchor-id="akshat-7">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        int total_elements;
+        std::vector&lt;double&gt; elements;
+
+    public:
+        int get_total_elements(std::vector&lt;int&gt; shp){
+            // Initialize production container
+            int prod;
+            // Loop through shape array
+            for(int i=0; i&lt;shp.size(), i++){
+                prod*=shp[i];
+            }
+            // Return statement
+            return prod;
+        };
+
+
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts)
+            :shape(shp), total_elements(get_total_elements(shape)), elements(total_elements, 0){
+                for(int i=0; i&lt;elmts.size();i++){
+                    elements[i]=elmts[i];
+            };
+
+    };
+    
+}</code></pre>
+</section>
+<section id="chatgpt-7" class="level4">
+<h4 data-anchor-id="chatgpt-7">ChatGPT</h4>
+<p>You’re close. A few small bugs:</p>
+<ul>
+<li><code>prod</code> must start at <code>1</code>, otherwise you multiply garbage.</li>
+<li>Your <code>for</code> loop needs semicolons, not a comma:</li>
+</ul>
+<div class="sourceCode" id="cb12"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> shp<span class="op">.</span>size<span class="op">();</span> i<span class="op">++)</span></span></code></pre></div>
+<ul>
+<li>At the end, make sure both the constructor and the class are closed properly with braces and <code>;</code>.</li>
+</ul>
+<p>One design thing to think about next: what if <code>elmts.size()</code> is greater than <code>total_elements</code>? Right now you’d write past the end of <code>elements</code>.</p>
+<p>Fix the syntax + <code>prod</code> initialization first.</p>
+</section>
+<section id="akshat-8" class="level4">
+<h4 data-anchor-id="akshat-8">Akshat</h4>
+<p>Is this actually a reasonable approach? I find it unlikely that I have done this myself without major mistakes.</p>
+</section>
+<section id="chatgpt-8" class="level4">
+<h4 data-anchor-id="chatgpt-8">ChatGPT</h4>
+<p>Yes. The overall approach is completely reasonable.</p>
+<p>What you got right on your own is the important part:</p>
+<ul>
+<li>storing <code>shape</code></li>
+<li>computing the total number of elements from the product of the dimensions</li>
+<li>allocating one flat contiguous <code>elements</code> buffer</li>
+<li>initializing that buffer to the required size</li>
+<li>copying supplied values into it</li>
+</ul>
+<p>Those are exactly the right design ideas for a small NumPy-like array.</p>
+<p>The mistakes you made are mostly local C++ mistakes rather than conceptual mistakes: uninitialized <code>prod</code>, <code>for</code> syntax, and not yet validating that the supplied data fits.</p>
+<p>So I would not read this as “I somehow got lucky.” I’d read it as: your design instincts are ahead of your C++ syntax fluency right now.</p>
+<p>One thing I would change later, but not yet: <code>get_total_elements()</code> probably doesn’t need to be public, because callers don’t really need that helper. But leave that alone for now.</p>
+</section>
+<section id="akshat-9" class="level4">
+<h4 data-anchor-id="akshat-9">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        int total_elements;
+        std::vector&lt;double&gt; elements;
+
+        int get_total_elements(std::vector&lt;int&gt; shp){
+            // Initialize production container
+            int prod = 1;
+            // Loop through shape array
+            for(int i=0; i&lt;shp.size();i++){
+                prod*=shp[i];
+            }
+            // Return statement
+            return prod;
+        };
+
+        void assign(std::vector&lt;double&gt; elmts){
+            for(int i=0; i&lt;elmts.size();i++){
+                elements[i]=elmts[i];
+            }
+        };
+
+    public:
+        void check(int total_elements, int elmts_size){
+            if(total_elements != elmts_size){
+                throw std::out_of_range("The shape does not equal the number of elements passed in.");
+            }
+        };
+
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts){
+            shape = shp;
+            total_elements = get_total_elements(shape);
+            check(total_elements, elmts.size());
+            assign(elmts);
+            };
+
+    };</code></pre>
+</section>
+<section id="chatgpt-9" class="level4">
+<h4 data-anchor-id="chatgpt-9">ChatGPT</h4>
+<p>This is a reasonable design, but there’s one important bug:</p>
+<p>You never actually allocate space in <code>elements</code>.</p>
+<p>Right now:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> elements<span class="op">;</span></span></code></pre></div>
+<p>starts empty, and then <code>assign()</code> does:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>elements<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> elmts<span class="op">[</span>i<span class="op">];</span></span></code></pre></div>
+<p>which writes out of bounds.</p>
+<p>Hint: before <code>assign(elmts)</code>, make <code>elements</code> have <code>total_elements</code> slots.</p>
+<p>Everything else is structurally fine for this stage. Also, <code>check()</code> probably belongs in <code>private</code>, but fix the storage bug first.</p>
+</section>
+<section id="akshat-10" class="level4">
+<h4 data-anchor-id="akshat-10">Akshat</h4>
+<p>Is this the right syntax? <code>elements = double[total_elements];</code></p>
+</section>
+<section id="chatgpt-10" class="level4">
+<h4 data-anchor-id="chatgpt-10">ChatGPT</h4>
+<p>Not for <code>std::vector&lt;double&gt;</code>.</p>
+<p>That syntax is closer to raw-array thinking. Since <code>elements</code> is a vector, do:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>elements <span class="op">=</span> <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;(</span>total_elements<span class="op">);</span></span></code></pre></div>
+<p>or equivalently:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>elements<span class="op">.</span>resize<span class="op">(</span>total_elements<span class="op">);</span></span></code></pre></div>
+<p>Then <code>elements[i]</code> is valid for indices <code>0</code> through <code>total_elements - 1</code>.</p>
+<p>If <code>elements</code> were a raw pointer like:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span><span class="op">*</span> elements<span class="op">;</span></span></code></pre></div>
+<p>then you’d use:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>elements <span class="op">=</span> <span class="kw">new</span> <span class="dt">double</span><span class="op">[</span>total_elements<span class="op">];</span></span></code></pre></div>
+<p>But with your current design, stick with the vector.</p>
+</section>
+<section id="akshat-11" class="level4">
+<h4 data-anchor-id="akshat-11">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        int total_elements;
+        std::vector&lt;double&gt; elements;
+
+        int get_total_elements(std::vector&lt;int&gt; shp){
+            // Initialize production container
+            int prod = 1;
+            // Loop through shape array
+            for(int i=0; i&lt;shp.size();i++){
+                prod*=shp[i];
+            }
+            // Return statement
+            return prod;
+        };
+
+        void check(int total_elements, int elmts_size){
+            if(total_elements != elmts_size){
+                throw std::out_of_range("The shape does not equal the number of elements passed in.");
+            }
+        };
+
+        void assign(std::vector&lt;double&gt; elmts){
+            for(int i=0; i&lt;elmts.size();i++){
+                elements[i]=elmts[i];
+            }
+        };
+
+    public:
+
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts){
+            shape = shp;
+            total_elements = get_total_elements(shape);
+            elements = std::vector&lt;double&gt;(total_elements);
+            check(total_elements, elmts.size());
+            assign(elmts);
+            };
+
+    };</code></pre>
+</section>
+<section id="chatgpt-11" class="level4">
+<h4 data-anchor-id="chatgpt-11">ChatGPT</h4>
+<p>Yes. This version is structurally sound for where we are.</p>
+<p>You now have:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>shape          <span class="co">// e.g. {2, 3, 4}</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>total_elements <span class="co">// 24</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>elements       <span class="co">// flat contiguous vector of 24 doubles</span></span></code></pre></div>
+<p>and you validate that the supplied number of values matches the shape before assigning them.</p>
+<p>I wouldn’t polish anything else yet.</p>
+</section>
+</section>
+<section id="indexing" class="level1">
+<h1>Indexing</h1>
+<p>Next problem: <strong>indexing</strong>. Suppose:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>shape <span class="op">=</span> <span class="op">{</span><span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">}</span></span></code></pre></div>
+<p>and I ask for:</p>
+<pre class="text"><code>(1, 2, 3)</code></pre>
+<p>What flat index in <code>elements</code> should that correspond to?</p>
+<p>Try deriving it yourself first.</p>
+<section id="akshat-12" class="level4">
+<h4 data-anchor-id="akshat-12">Akshat</h4>
+<p>This is the 20th element, right</p>
+</section>
+<section id="chatgpt-12" class="level4">
+<h4 data-anchor-id="chatgpt-12">ChatGPT</h4>
+<p>Almost — it’s the <strong>24th element</strong>, or flat index <strong>23</strong> with zero-based indexing.</p>
+<p>For shape <code>{2, 3, 4}</code>, the coordinate <code>(1, 2, 3)</code> gives:</p>
+<pre class="text"><code>1 × (3×4) + 2 × 4 + 3
+= 12 + 8 + 3
+= 23</code></pre>
+<p>So:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>elements<span class="op">[</span><span class="dv">23</span><span class="op">]</span></span></code></pre></div>
+<p>which is the 24th element.</p>
+<p>Now try to generalize that calculation to an arbitrary shape like <code>{a, b, c, d}</code>.</p>
+</section>
+<section id="akshat-13" class="level4">
+<h4 data-anchor-id="akshat-13">Akshat</h4>
+<p>I will write a small helper function. Don’t tell me how to do it.</p>
+</section>
+<section id="chatgpt-13" class="level4">
+<h4 data-anchor-id="chatgpt-13">ChatGPT</h4>
+<p>Perfect. Go ahead and write it.</p>
+<p>I’ll only review what you come up with and point out bugs or conceptual issues.</p>
+</section>
+<section id="akshat-14" class="level4">
+<h4 data-anchor-id="akshat-14">Akshat</h4>
+<p>Does C++ have an easy way to apply a map-reduce like operation to do cumulative multiplication</p>
+</section>
+<section id="chatgpt-14" class="level4">
+<h4 data-anchor-id="chatgpt-14">ChatGPT</h4>
+<p>Yes.</p>
+<p>For a plain “multiply all values together,” C++ has <code>std::accumulate</code> from <code>&lt;numeric&gt;</code>:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>accumulate<span class="op">(</span>v<span class="op">.</span>begin<span class="op">(),</span> v<span class="op">.</span>end<span class="op">(),</span> <span class="dv">1</span><span class="op">,</span> <span class="bu">std::</span>multiplies<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;())</span></span></code></pre></div>
+<p>That’s essentially a reduce.</p>
+<p>But if by <strong>cumulative multiplication</strong> you mean:</p>
+<pre class="text"><code>[a, b, c, d] → [a, a*b, a*b*c, a*b*c*d]</code></pre>
+<p>then in modern C++ there’s <code>std::partial_sum</code>, also from <code>&lt;numeric&gt;</code>:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>partial_sum<span class="op">(</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    v<span class="op">.</span>begin<span class="op">(),</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    v<span class="op">.</span>end<span class="op">(),</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    out<span class="op">.</span>begin<span class="op">(),</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>multiplies<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;()</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="op">);</span></span></code></pre></div>
+<p>For your helper, though, I’d probably not use it yet unless it genuinely makes your indexing logic clearer. A short loop may be easier to reason about while you’re deriving the formula.</p>
+</section>
+<section id="akshat-15" class="level4">
+<h4 data-anchor-id="akshat-15">Akshat</h4>
+<p>In standard OOP, do I need to pass class variables into each function as parameters?</p>
+</section>
+<section id="chatgpt-15" class="level4">
+<h4 data-anchor-id="chatgpt-15">ChatGPT</h4>
+<p>No.&nbsp;Member functions can access the object’s member variables directly.</p>
+<p>So in your class:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Array <span class="op">{</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> shape<span class="op">;</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> total_elements<span class="op">;</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> foo<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// can use shape and total_elements directly</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<p>You do <strong>not</strong> need:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> foo<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> shape<span class="op">,</span> <span class="dt">int</span> total_elements<span class="op">)</span></span></code></pre></div>
+<p>unless you specifically want the function to operate on values supplied by the caller rather than the current object’s state.</p>
+<p>Inside a member function, <code>shape</code> is effectively shorthand for:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">this</span><span class="op">-&gt;</span>shape</span></code></pre></div>
+<p>where <code>this</code> points to the current object.</p>
+</section>
+<section id="akshat-16" class="level4">
+<h4 data-anchor-id="akshat-16">Akshat</h4>
+<pre class="text"><code>int get_index(std::vector&lt;int&gt; idx){
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=1;
+                for(int j=i;j&lt;idx.size();j++){
+                    coord*=j;
+                }
+                index+=coord;
+            }
+            return index;
+        };</code></pre>
+</section>
+<section id="chatgpt-16" class="level4">
+<h4 data-anchor-id="chatgpt-16">ChatGPT</h4>
+<p>You’ve got the right high-level idea — accumulate an offset dimension by dimension — but the inner loop is multiplying the wrong thing.</p>
+<p>Right now you do:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>coord <span class="op">*=</span> j<span class="op">;</span></span></code></pre></div>
+<p>which multiplies by the <strong>index number</strong> <code>j</code>.</p>
+<p>For shape <code>{2, 3, 4}</code> and coordinate <code>{1, 2, 3}</code>, you need the contribution from each coordinate to depend on the sizes of the dimensions <strong>after it</strong>.</p>
+<p>So for <code>idx[i]</code>, the multiplier should come from <code>shape</code>, not from <code>j</code>.</p>
+<p>One more thing: you currently never use <code>idx[i]</code> in the calculation.</p>
+<p>Those are the two conceptual bugs. Fix those, and your structure is close.</p>
+</section>
+<section id="akshat-17" class="level4">
+<h4 data-anchor-id="akshat-17">Akshat</h4>
+<pre class="text"><code>int get_index(std::vector&lt;int&gt; idx){
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=idx[i];
+                for(int j=i;j&lt;idx.size();j++){
+                    coord*=shape[j];
+                }
+                index+=coord;
+            }
+            return index;
+        };</code></pre>
+</section>
+<section id="chatgpt-17" class="level4">
+<h4 data-anchor-id="chatgpt-17">ChatGPT</h4>
+<p>Closer. One indexing mistake remains.</p>
+<p>Right now you multiply by:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>shape<span class="op">[</span>i<span class="op">]</span></span></code></pre></div>
+<p>as well as all later dimensions, because your inner loop starts at:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>j <span class="op">=</span> i</span></code></pre></div>
+<p>But the contribution of <code>idx[i]</code> should be multiplied only by the dimensions <strong>after</strong> dimension <code>i</code>.</p>
+<p>So the inner loop should start one position later.</p>
+<p>Also, once you fix that, test specifically with:</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>shape <span class="op">=</span> <span class="op">{</span><span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">}</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>idx   <span class="op">=</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">}</span></span></code></pre></div>
+<p>and see whether you get <code>23</code>.</p>
+</section>
+<section id="akshat-18" class="level4">
+<h4 data-anchor-id="akshat-18">Akshat</h4>
+<pre class="text"><code>int get_index(std::vector&lt;int&gt; idx){
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=idx[i];
+                for(int j=i+1;j&lt;idx.size();j++){
+                    coord*=shape[j];
+                }
+                index+=coord;
+            }
+            return index;
+        };</code></pre>
+</section>
+<section id="chatgpt-18" class="level4">
+<h4 data-anchor-id="chatgpt-18">ChatGPT</h4>
+<p>Yes — that calculation is correct for ordinary row-major contiguous indexing.</p>
+<p>For:</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>shape <span class="op">=</span> <span class="op">{</span><span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">}</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>idx   <span class="op">=</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">}</span></span></code></pre></div>
+<p>you get:</p>
+<pre class="text"><code>1*(3*4) + 2*4 + 3 = 23</code></pre>
+<p>So <code>get_index()</code> is doing the right conceptual job now.</p>
+<p>Next thing I’d add is <strong>validation</strong>: make sure <code>idx</code> has the same number of dimensions as <code>shape</code>, and that each coordinate is within bounds.</p>
+<p>Do that before wiring it into <code>operator()</code>.</p>
+</section>
+<section id="akshat-19" class="level4">
+<h4 data-anchor-id="akshat-19">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        std::vector&lt;double&gt; elements;
+        int total_elements;
+
+        int get_total_elements(std::vector&lt;int&gt; shp){
+            int prod = 1;
+            for(int i=0; i&lt;shp.size();i++){
+                prod*=shp[i];
+            }
+            return prod;
+        };
+
+        void check(int total_elements, int elmts_size){
+            if(total_elements != elmts_size){
+                throw std::out_of_range("Shape does not equal total elements.");
+            }
+        };
+
+        void assign(std::vector&lt;double&gt; elmts){
+            for(int i=0; i&lt;elmts.size();i++){
+                elements[i]=elmts[i];
+            }
+        };
+
+        int get_index(std::vector&lt;int&gt; idx){
+            
+            check(idx.size(), shape.size());
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=idx[i];
+                for(int j=i+1;j&lt;idx.size();j++){
+                    coord*=shape[j];
+                }
+                index+=coord;
+            }
+            return index;
+        };
+
+    public:
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts){
+            shape = shp;
+            total_elements = get_total_elements(shape);
+            elements = std::vector&lt;double&gt;(total_elements);
+            check(total_elements, elmts.size());
+            assign(elmts);
+            };
+
+    };</code></pre>
+</section>
+<section id="chatgpt-19" class="level4">
+<h4 data-anchor-id="chatgpt-19">ChatGPT</h4>
+<p>This is a good checkpoint. One issue: you reused <code>check()</code> for two different concepts.</p>
+<p>Here:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>check<span class="op">(</span>total_elements<span class="op">,</span> elmts<span class="op">.</span>size<span class="op">());</span></span></code></pre></div>
+<p>it means “are these counts equal?”</p>
+<p>But here:</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>check<span class="op">(</span>idx<span class="op">.</span>size<span class="op">(),</span> shape<span class="op">.</span>size<span class="op">());</span></span></code></pre></div>
+<p>it means “does the number of indices match the rank?”</p>
+<p>That happens to work because both are equality checks, but the error message is now wrong for the second use.</p>
+</section>
+</section>
+<section id="shape-and-index-validation" class="level1">
+<h1>Shape and index validation</h1>
+<p>More importantly, you still haven’t checked that each coordinate is valid. For example, with:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>shape <span class="op">=</span> <span class="op">{</span><span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">}</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>idx   <span class="op">=</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span> <span class="dv">7</span><span class="op">,</span> <span class="dv">0</span><span class="op">}</span></span></code></pre></div>
+<p>your <code>get_index()</code> will happily compute something.</p>
+<p>Next step: add a separate index-validation helper that checks each <code>idx[i]</code> against <code>shape[i]</code>.</p>
+<section id="akshat-20" class="level4">
+<h4 data-anchor-id="akshat-20">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        std::vector&lt;double&gt; elements;
+        int total_elements;
+
+        int get_total_elements(std::vector&lt;int&gt; shp){
+            int prod = 1;
+            for(int i=0; i&lt;shp.size();i++){
+                prod*=shp[i];
+            }
+            return prod;
+        };
+
+        void check(int total_elements, int elmts_size){
+            if(total_elements != elmts_size){
+                throw std::out_of_range("Shape does not equal total elements.");
+            }
+        };
+
+        void check_coordinates(std::vector&lt;int&gt; idx){
+            if(idx.size() != shape.size()){
+                throw std::out_of_range("Coordinates do not have the same total dimensionality as the array.");
+            }
+            for(int i=0;i&lt;idx.size();i++){
+                if((idx[i] &gt;= shape[i]) || (idx[i] &lt; 0)){
+                    throw std::out_of_range("At least one element of the coordinates is out of range.");
+                }
+            }
+
+        };
+
+        void assign(std::vector&lt;double&gt; elmts){
+            for(int i=0; i&lt;elmts.size();i++){
+                elements[i]=elmts[i];
+            }
+        };
+
+        int get_index(std::vector&lt;int&gt; idx){
+            check_coordinates(idx);
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=idx[i];
+                for(int j=i+1;j&lt;idx.size();j++){
+                    coord*=shape[j];
+                }
+                index+=coord;
+            }
+            return index;
+        };
+
+    public:
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts){
+            shape = shp;
+            total_elements = get_total_elements(shape);
+            elements = std::vector&lt;double&gt;(total_elements);
+            check(total_elements, elmts.size());
+            assign(elmts);
+            };
+
+    };</code></pre>
+</section>
+<section id="chatgpt-20" class="level4">
+<h4 data-anchor-id="chatgpt-20">ChatGPT</h4>
+<p>Yes — this is now structurally good.</p>
+<p>Your coordinate validation does the two important checks:</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>idx<span class="op">.</span>size<span class="op">()</span> <span class="op">==</span> shape<span class="op">.</span>size<span class="op">()</span></span></code></pre></div>
+<p>and, for each dimension:</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="dv">0</span> <span class="op">&lt;=</span> idx<span class="op">[</span>i<span class="op">]</span> <span class="op">&lt;</span> shape<span class="op">[</span>i<span class="op">]</span></span></code></pre></div>
+<p>So <code>get_index()</code> is now protected against both rank mismatches and out-of-range coordinates.</p>
+<p>I’d move on now rather than polish this further.</p>
+<p>Next step: expose element access through <code>operator()</code> so you can write something like:</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">})</span></span></code></pre></div>
+<p>or whatever call shape you want to support.</p>
+<p>Given what you did with <code>Matrix</code>, you should be able to work out the return type and body yourself.</p>
+</section>
+<section id="akshat-21" class="level4">
+<h4 data-anchor-id="akshat-21">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        std::vector&lt;double&gt; elements;
+        int total_elements;
+
+        int get_total_elements(std::vector&lt;int&gt; shp){
+            int prod = 1;
+            for(int i=0; i&lt;shp.size();i++){
+                prod*=shp[i];
+            }
+            return prod;
+        };
+
+        void check_sizes(int total_elements, int elmts_size){
+            if(total_elements != elmts_size){
+                throw std::out_of_range("Shape does not equal total elements.");
+            }
+        };
+
+        void check_coordinates(std::vector&lt;int&gt; idx){
+            if(idx.size() != shape.size()){
+                throw std::out_of_range("Coordinates do not have the same total dimensionality as the array.");
+            }
+            for(int i=0;i&lt;idx.size();i++){
+                if((idx[i] &gt;= shape[i]) || (idx[i] &lt; 0)){
+                    throw std::out_of_range("At least one element of the coordinates is out of range.");
+                }
+            }
+
+        };
+
+        void assign(std::vector&lt;double&gt; elmts){
+            for(int i=0; i&lt;elmts.size();i++){
+                elements[i]=elmts[i];
+            }
+        };
+
+        int get_index(std::vector&lt;int&gt; idx){
+            check_coordinates(idx);
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=idx[i];
+                for(int j=i+1;j&lt;idx.size();j++){
+                    coord*=shape[j];
+                }
+                index+=coord;
+            }
+            return index;
+        };
+
+    public:
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts){
+            shape = shp;
+            total_elements = get_total_elements(shape);
+            elements = std::vector&lt;double&gt;(total_elements);
+            check_sizes(total_elements, elmts.size());
+            assign(elmts);
+            };
+
+        double operator()(std::vector&lt;double&gt; idx){
+            return elements.at(get_index(idx));
+
+        };
+
+    };</code></pre>
+</section>
+<section id="chatgpt-21" class="level4">
+<h4 data-anchor-id="chatgpt-21">ChatGPT</h4>
+<p>Very close. Two things to fix.</p>
+<p>First, your index type is wrong here:</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span> <span class="kw">operator</span><span class="op">()(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> idx<span class="op">)</span></span></code></pre></div>
+<p><code>get_index()</code> expects integer coordinates, so this should take a <code>std::vector&lt;int&gt;</code>.</p>
+<p>Second, think back to the Matrix class: if you want this to work,</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">})</span> <span class="op">=</span> <span class="fl">7.0</span><span class="op">;</span></span></code></pre></div>
+<p>then returning plain <code>double</code> won’t be enough.</p>
+<p>Hint: what return type did you use for mutable Matrix element access?</p>
+</section>
+<section id="akshat-22" class="level4">
+<h4 data-anchor-id="akshat-22">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        std::vector&lt;double&gt; elements;
+        int total_elements;
+
+        int get_total_elements(std::vector&lt;int&gt; shp){
+            int prod = 1;
+            for(int i=0; i&lt;shp.size();i++){
+                prod*=shp[i];
+            }
+            return prod;
+        };
+
+        void check_sizes(int total_elements, int elmts_size){
+            if(total_elements != elmts_size){
+                throw std::out_of_range("Shape does not equal total elements.");
+            }
+        };
+
+        void check_coordinates(std::vector&lt;int&gt; idx){
+            if(idx.size() != shape.size()){
+                throw std::out_of_range("Coordinates do not have the same total dimensionality as the array.");
+            }
+            for(int i=0;i&lt;idx.size();i++){
+                if((idx[i] &gt;= shape[i]) || (idx[i] &lt; 0)){
+                    throw std::out_of_range("At least one element of the coordinates is out of range.");
+                }
+            }
+
+        };
+
+        void assign(std::vector&lt;double&gt; elmts){
+            for(int i=0; i&lt;elmts.size();i++){
+                elements[i]=elmts[i];
+            }
+        };
+
+        int get_index(std::vector&lt;int&gt; idx){
+            check_coordinates(idx);
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=idx[i];
+                for(int j=i+1;j&lt;idx.size();j++){
+                    coord*=shape[j];
+                }
+                index+=coord;
+            }
+            return index;
+        };
+
+    public:
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts){
+            shape = shp;
+            total_elements = get_total_elements(shape);
+            elements = std::vector&lt;double&gt;(total_elements);
+            check_sizes(total_elements, elmts.size());
+            assign(elmts);
+            };
+
+        double&amp; operator()(std::vector&lt;int&gt; idx){
+            return elements.at(get_index(idx));
+
+        };
+
+    };</code></pre>
+</section>
+<section id="chatgpt-22" class="level4">
+<h4 data-anchor-id="chatgpt-22">ChatGPT</h4>
+<p>Yes. That’s the right mutable element-access interface now:</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">()(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> idx<span class="op">)</span></span></code></pre></div>
+<p>because it returns a reference to the actual stored element, so this works:</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">})</span> <span class="op">=</span> <span class="fl">7.0</span><span class="op">;</span></span></code></pre></div>
+</section>
+</section>
+<section id="const-correctness" class="level1">
+<h1>Const correctness</h1>
+<p>The next thing I’d add is the <strong>const overload</strong>, just like you did for <code>Matrix</code>, so read-only arrays can still be indexed without allowing mutation.</p>
+<p>Don’t change anything else yet.</p>
+<section id="akshat-23" class="level4">
+<h4 data-anchor-id="akshat-23">Akshat</h4>
+<p>Could you please explain the const overload concept again to me? Looking back over the <code>Matrix</code> code I can’t remember how that works or why we did it.</p>
+</section>
+<section id="chatgpt-23" class="level4">
+<h4 data-anchor-id="chatgpt-23">ChatGPT</h4>
+<p>Yes. The reason we added a const overload in <code>Matrix</code> was so that a <strong>const object can still be read from, but not modified through the accessor</strong>.</p>
+<p>Right now you have:</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">()(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> idx<span class="op">){</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> elements<span class="op">.</span>at<span class="op">(</span>get_index<span class="op">(</span>idx<span class="op">));</span></span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>That works for a normal mutable array:</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>Array a<span class="op">(...);</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">})</span> <span class="op">=</span> <span class="fl">7.0</span><span class="op">;</span></span></code></pre></div>
+<p>because you return a mutable reference: <code>double&amp;</code>.</p>
+<p>But suppose you have:</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> Array a<span class="op">(...);</span></span></code></pre></div>
+<p>Now C++ should not allow:</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">})</span> <span class="op">=</span> <span class="fl">7.0</span><span class="op">;</span></span></code></pre></div>
+<p>because <code>a</code> is const.</p>
+<p>So you add a second overload:</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">()(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> idx<span class="op">)</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> elements<span class="op">.</span>at<span class="op">(</span>get_index<span class="op">(</span>idx<span class="op">));</span></span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>There are <strong>two different <code>const</code>s</strong> doing different jobs here.</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">double</span><span class="op">&amp;</span></span></code></pre></div>
+<p>means:</p>
+<blockquote class="blockquote">
+<p>the caller gets a reference to the element, but cannot modify that element through this reference.</p>
+</blockquote>
+<p>And the final:</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="op">(...</span> <span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>means:</p>
+<blockquote class="blockquote">
+<p>this member function promises not to modify the <code>Array</code> object.</p>
+</blockquote>
+<p>So then C++ chooses based on the object:</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>Array a<span class="op">(...);</span></span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">});</span>          <span class="co">// calls non-const overload</span></span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> Array b<span class="op">(...);</span></span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a>b<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">});</span>          <span class="co">// calls const overload</span></span></code></pre></div>
+<p>The whole point is that the same indexing syntax works for both mutable and read-only arrays, while preserving the read-only guarantee.</p>
+</section>
+<section id="akshat-24" class="level4">
+<h4 data-anchor-id="akshat-24">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        std::vector&lt;double&gt; elements;
+        int total_elements;
+
+        int get_total_elements(std::vector&lt;int&gt; shp){
+            int prod = 1;
+            for(int i=0; i&lt;shp.size();i++){
+                prod*=shp[i];
+            }
+            return prod;
+        };
+
+        void check_sizes(int total_elements, int elmts_size){
+            if(total_elements != elmts_size){
+                throw std::out_of_range("Shape does not equal total elements.");
+            }
+        };
+
+        void check_coordinates(std::vector&lt;int&gt; idx){
+            if(idx.size() != shape.size()){
+                throw std::out_of_range("Coordinates do not have the same total dimensionality as the array.");
+            }
+            for(int i=0;i&lt;idx.size();i++){
+                if((idx[i] &gt;= shape[i]) || (idx[i] &lt; 0)){
+                    throw std::out_of_range("At least one element of the coordinates is out of range.");
+                }
+            }
+
+        };
+
+        void assign(std::vector&lt;double&gt; elmts){
+            for(int i=0; i&lt;elmts.size();i++){
+                elements[i]=elmts[i];
+            }
+        };
+
+        int get_index(std::vector&lt;int&gt; idx){
+            check_coordinates(idx);
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=idx[i];
+                for(int j=i+1;j&lt;idx.size();j++){
+                    coord*=shape[j];
+                }
+                index+=coord;
+            }
+            return index;
+        };
+
+    public:
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts){
+            shape = shp;
+            total_elements = get_total_elements(shape);
+            elements = std::vector&lt;double&gt;(total_elements);
+            check_sizes(total_elements, elmts.size());
+            assign(elmts);
+            };
+
+        double&amp; operator()(std::vector&lt;int&gt; idx){
+            return elements.at(get_index(idx));
+        };
+
+        const double&amp; operator()(std::vector&lt;int&gt; idx) const{
+            return elements.at(get_index(idx));
+        };
+
+    };</code></pre>
+</section>
+<section id="chatgpt-24" class="level4">
+<h4 data-anchor-id="chatgpt-24">ChatGPT</h4>
+<p>Almost. One const-correctness issue remains.</p>
+<p>Your const overload:</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">()(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> idx<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>calls:</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>get_index<span class="op">(</span>idx<span class="op">)</span></span></code></pre></div>
+<p>but <code>get_index()</code> is not marked <code>const</code>, and it calls <code>check_coordinates()</code>, which also isn’t marked <code>const</code>.</p>
+<p>Since neither helper modifies the <code>Array</code>, mark both as const member functions:</p>
+<div class="sourceCode" id="cb66"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> get_index<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> idx<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>and:</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> check_coordinates<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> idx<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>That should make the const overload compile cleanly.</p>
+</section>
+<section id="akshat-25" class="level4">
+<h4 data-anchor-id="akshat-25">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        std::vector&lt;double&gt; elements;
+        int total_elements;
+
+        int get_total_elements(std::vector&lt;int&gt; shp) const{
+            int prod = 1;
+            for(int i=0; i&lt;shp.size();i++){
+                prod*=shp[i];
+            }
+            return prod;
+        };
+
+        void check_sizes(int total_elements, int elmts_size) const{
+            if(total_elements != elmts_size){
+                throw std::out_of_range("Shape does not equal total elements.");
+            }
+        };
+
+        void check_coordinates(std::vector&lt;int&gt; idx) const{
+            if(idx.size() != shape.size()){
+                throw std::out_of_range("Coordinates do not have the same total dimensionality as the array.");
+            }
+            for(int i=0;i&lt;idx.size();i++){
+                if((idx[i] &gt;= shape[i]) || (idx[i] &lt; 0)){
+                    throw std::out_of_range("At least one element of the coordinates is out of range.");
+                }
+            }
+
+        };
+
+        void assign(std::vector&lt;double&gt; elmts){
+            for(int i=0; i&lt;elmts.size();i++){
+                elements[i]=elmts[i];
+            }
+        };
+
+        int get_index(std::vector&lt;int&gt; idx) const{
+            check_coordinates(idx);
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=idx[i];
+                for(int j=i+1;j&lt;idx.size();j++){
+                    coord*=shape[j];
+                }
+                index+=coord;
+            }
+            return index;
+        };
+
+    public:
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts){
+            shape = shp;
+            total_elements = get_total_elements(shape);
+            elements = std::vector&lt;double&gt;(total_elements);
+            check_sizes(total_elements, elmts.size());
+            assign(elmts);
+            };
+
+        double&amp; operator()(std::vector&lt;int&gt; idx){
+            return elements.at(get_index(idx));
+        };
+
+        const double&amp; operator()(std::vector&lt;int&gt; idx) const{
+            return elements.at(get_index(idx));
+        };
+
+    };</code></pre>
+</section>
+<section id="chatgpt-25" class="level4">
+<h4 data-anchor-id="chatgpt-25">ChatGPT</h4>
+<p>Yes — this is good.</p>
+<p>Your const-correctness is now consistent:</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">double</span><span class="op">&amp;</span> <span class="kw">operator</span><span class="op">()(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> idx<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>can call <code>get_index() const</code>, which can call <code>check_coordinates() const</code>.</p>
+<p>You also marked <code>get_total_elements()</code> and <code>check_sizes()</code> const. That’s fine too, since they don’t modify the object.</p>
+<p>Next step: test both access paths.</p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>Array a<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">},</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">,</span><span class="dv">4</span><span class="op">,</span><span class="dv">5</span><span class="op">,</span><span class="dv">6</span><span class="op">});</span></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">})</span> <span class="op">=</span> <span class="dv">99</span><span class="op">;</span></span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> Array<span class="op">&amp;</span> b <span class="op">=</span> a<span class="op">;</span></span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> b<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">})</span> <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span></code></pre></div>
+<p>You should be able to modify through <code>a</code>, but only read through <code>b</code>.</p>
+<p>If that works, we move on.</p>
+</section>
+<section id="akshat-26" class="level4">
+<h4 data-anchor-id="akshat-26">Akshat</h4>
+<p>What should this return?</p>
+</section>
+<section id="chatgpt-26" class="level4">
+<h4 data-anchor-id="chatgpt-26">ChatGPT</h4>
+<p><code>99</code>.</p>
+<p>Because:</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>Array a<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">},</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">,</span><span class="dv">4</span><span class="op">,</span><span class="dv">5</span><span class="op">,</span><span class="dv">6</span><span class="op">});</span></span></code></pre></div>
+<p>means the 2×3 array is:</p>
+<pre class="text"><code>1 2 3
+4 5 6</code></pre>
+<p>Then:</p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">})</span> <span class="op">=</span> <span class="dv">99</span><span class="op">;</span></span></code></pre></div>
+<p>changes row 1, column 2 — zero-based indexing — so the last element becomes <code>99</code>.</p>
+<p>Then:</p>
+<div class="sourceCode" id="cb74"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> Array<span class="op">&amp;</span> b <span class="op">=</span> a<span class="op">;</span></span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> b<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">})</span> <span class="op">&lt;&lt;</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span></code></pre></div>
+<p>reads the same element through the const overload.</p>
+<p>So it should print:</p>
+<pre class="text"><code>99</code></pre>
+</section>
+<section id="akshat-27" class="level4">
+<h4 data-anchor-id="akshat-27">Akshat</h4>
+<p>Works fine.</p>
+</section>
+<section id="chatgpt-27" class="level4">
+<h4 data-anchor-id="chatgpt-27">ChatGPT</h4>
+<p>Good. Then the core indexing abstraction is working.</p>
+</section>
+</section>
+<section id="reshape-and-raii" class="level1">
+<h1>Reshape and RAII</h1>
+<p>Next, I’d add one genuinely new capability: <strong>reshape</strong>.</p>
+<p>Something like:</p>
+<div class="sourceCode" id="cb76"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>Array a<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">},</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">,</span><span class="dv">4</span><span class="op">,</span><span class="dv">5</span><span class="op">,</span><span class="dv">6</span><span class="op">});</span></span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>a<span class="op">.</span>reshape<span class="op">({</span><span class="dv">3</span><span class="op">,</span><span class="dv">2</span><span class="op">});</span></span></code></pre></div>
+<p>The underlying <code>elements</code> buffer should stay exactly the same; only the <code>shape</code> changes.</p>
+<p>Your job: write <code>reshape(std::vector&lt;int&gt; new_shape)</code>.</p>
+<p>Only hint: the total number of elements before and after must match.</p>
+<section id="akshat-28" class="level4">
+<h4 data-anchor-id="akshat-28">Akshat</h4>
+<p>I will have to implement move semantics or can I directly assign?</p>
+</section>
+<section id="chatgpt-28" class="level4">
+<h4 data-anchor-id="chatgpt-28">ChatGPT</h4>
+<p>You can directly assign.</p>
+<p>For <code>reshape</code>, you are not replacing the whole <code>Array</code> object or transferring ownership. You are just changing one member:</p>
+<div class="sourceCode" id="cb77"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a>shape <span class="op">=</span> new_shape<span class="op">;</span></span></code></pre></div>
+<p><code>std::vector</code> already knows how to assign/copy its contents safely.</p>
+<p>So no custom move semantics are needed here.</p>
+<p>The main thing <code>reshape()</code> has to do is:</p>
+<div class="sourceCode" id="cb78"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>new_shape product <span class="op">==</span> total_elements</span></code></pre></div>
+<p>If that check passes, update <code>shape</code>.</p>
+</section>
+<section id="akshat-29" class="level4">
+<h4 data-anchor-id="akshat-29">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        std::vector&lt;double&gt; elements;
+        int total_elements;
+
+        int get_total_elements(std::vector&lt;int&gt; shp) const{
+            int prod = 1;
+            for(int i=0; i&lt;shp.size();i++){
+                prod*=shp[i];
+            }
+            return prod;
+        };
+
+        void check_sizes(int elmts_size) const{
+            if(total_elements != elmts_size){
+                throw std::out_of_range("Shape does not equal total elements.");
+            }
+        };
+
+        void check_coordinates(std::vector&lt;int&gt; idx) const{
+            if(idx.size() != shape.size()){
+                throw std::out_of_range("Coordinates do not have the same total dimensionality as the array.");
+            }
+            for(int i=0;i&lt;idx.size();i++){
+                if((idx[i] &gt;= shape[i]) || (idx[i] &lt; 0)){
+                    throw std::out_of_range("At least one element of the coordinates is out of range.");
+                }
+            }
+
+        };
+
+        void assign(std::vector&lt;double&gt; elmts){
+            for(int i=0; i&lt;elmts.size();i++){
+                elements[i]=elmts[i];
+            }
+        };
+
+        int get_index(std::vector&lt;int&gt; idx) const{
+            check_coordinates(idx);
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=idx[i];
+                for(int j=i+1;j&lt;idx.size();j++){
+                    coord*=shape[j];
+                }
+                index+=coord;
+            }
+            return index;
+        };
+
+    public:
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts){
+            shape = shp;
+            total_elements = get_total_elements(shape);
+            elements = std::vector&lt;double&gt;(total_elements);
+            check_sizes(elmts.size());
+            assign(elmts);
+            };
+
+        double&amp; operator()(std::vector&lt;int&gt; idx){
+            return elements.at(get_index(idx));
+        };
+
+        const double&amp; operator()(std::vector&lt;int&gt; idx) const{
+            return elements.at(get_index(idx));
+        };
+
+        void reshape(std::vector&lt;int&gt; new_shape){
+            check_sizes(get_total_elements(new_shape));
+            shape = new_shape;
+        }
+
+    };
+
+
+int main(){
+    Array a({2,3}, {1,2,3,4,5,6});
+    a({1,2}) = 99;
+
+    const Array&amp; b = a;
+    std::cout &lt;&lt; b({1,2}) &lt;&lt; "\n";
+
+    return 1;
+}</code></pre>
+</section>
+<section id="chatgpt-29" class="level4">
+<h4 data-anchor-id="chatgpt-29">ChatGPT</h4>
+<p>This is good. Your <code>reshape()</code> logic is exactly the right shape:</p>
+<div class="sourceCode" id="cb80"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> reshape<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> new_shape<span class="op">){</span></span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a>    check_sizes<span class="op">(</span>get_total_elements<span class="op">(</span>new_shape<span class="op">));</span></span>
+<span id="cb80-3"><a href="#cb80-3" aria-hidden="true" tabindex="-1"></a>    shape <span class="op">=</span> new_shape<span class="op">;</span></span>
+<span id="cb80-4"><a href="#cb80-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>You’re reusing the invariant check instead of duplicating it, and you’re not touching <code>elements</code>, which is what we want.</p>
+<p>Two tiny notes:</p>
+<ul>
+<li><code>return 1;</code> from <code>main()</code> usually signals an error; use <code>return 0;</code> for normal success.</li>
+<li>Your <code>check_sizes()</code> name is now doing double duty: constructor validation and reshape validation. That’s fine for now.</li>
+</ul>
+<p>Next, I’d test:</p>
+<div class="sourceCode" id="cb81"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a>a<span class="op">.</span>reshape<span class="op">({</span><span class="dv">3</span><span class="op">,</span><span class="dv">2</span><span class="op">});</span></span></code></pre></div>
+<p>and verify that the same flat storage is interpreted under the new shape.</p>
+<p>Then we can move to the next genuinely interesting feature: probably <strong>elementwise operations</strong> like <code>a + b</code>.</p>
+</section>
+<section id="akshat-30" class="level4">
+<h4 data-anchor-id="akshat-30">Akshat</h4>
+<p>Why did we have to implement move semantics previously when we did the list?</p>
+</section>
+<section id="chatgpt-30" class="level4">
+<h4 data-anchor-id="chatgpt-30">ChatGPT</h4>
+<p>Because in the <code>List</code> class, <strong>you were managing raw heap memory yourself</strong>.</p>
+<p>You had something like:</p>
+<div class="sourceCode" id="cb82"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span><span class="op">*</span> elements<span class="op">;</span></span></code></pre></div>
+<p>and the class manually did:</p>
+<div class="sourceCode" id="cb83"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="kw">new</span> <span class="dt">int</span><span class="op">[...]</span></span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a><span class="kw">delete</span><span class="op">[]</span> elements<span class="op">;</span></span></code></pre></div>
+<p>That meant ownership was your responsibility. So if one <code>List</code> was copied or moved, C++ needed explicit rules for who owns that memory afterward.</p>
+<p>That’s why we had to implement:</p>
+<ul>
+<li>copy constructor</li>
+<li>copy assignment</li>
+<li>move constructor</li>
+<li>move assignment</li>
+<li>destructor</li>
+</ul>
+<p>For <code>Array</code>, though, your storage is:</p>
+<div class="sourceCode" id="cb84"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> elements<span class="op">;</span></span></code></pre></div>
+<p><code>std::vector</code> already implements all of that machinery correctly.</p>
+<p>So when you do:</p>
+<div class="sourceCode" id="cb85"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>shape <span class="op">=</span> new_shape<span class="op">;</span></span></code></pre></div>
+<p>or copy/move an <code>Array</code>, the <code>std::vector</code> members already know how to copy, move, allocate, free, and clean themselves up.</p>
+<p>So the key distinction is:</p>
+<blockquote class="blockquote">
+<p><code>List</code>: you owned raw memory directly, so you had to define ownership semantics.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p><code>Array</code>: <code>std::vector</code> owns the memory for you, so its copy/move/destructor behavior propagates automatically.</p>
+</blockquote>
+<p>That’s one of the big benefits of RAII containers like <code>std::vector</code>.</p>
+</section>
+<section id="akshat-31" class="level4">
+<h4 data-anchor-id="akshat-31">Akshat</h4>
+<p>What is RAII anyway?</p>
+</section>
+<section id="chatgpt-31" class="level4">
+<h4 data-anchor-id="chatgpt-31">ChatGPT</h4>
+<p>RAII stands for <strong>Resource Acquisition Is Initialization</strong>.</p>
+<p>The name is awful, but the idea is simple:</p>
+<blockquote class="blockquote">
+<p>Tie the lifetime of a resource to the lifetime of an object.</p>
+</blockquote>
+<p>Your <code>List</code> class is a perfect example.</p>
+<p>When the object is constructed:</p>
+<div class="sourceCode" id="cb86"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>List<span class="op">(</span><span class="dt">int</span> l<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb86-2"><a href="#cb86-2" aria-hidden="true" tabindex="-1"></a>    elements <span class="op">=</span> <span class="kw">new</span> <span class="dt">int</span><span class="op">[</span>l<span class="op">];</span></span>
+<span id="cb86-3"><a href="#cb86-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>it acquires a resource: heap memory.</p>
+<p>When the object is destroyed:</p>
+<div class="sourceCode" id="cb87"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true" tabindex="-1"></a><span class="op">~</span>List<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb87-2"><a href="#cb87-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">delete</span><span class="op">[]</span> elements<span class="op">;</span></span>
+<span id="cb87-3"><a href="#cb87-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>it releases that resource.</p>
+<p>So:</p>
+<div class="sourceCode" id="cb88"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb88-2"><a href="#cb88-2" aria-hidden="true" tabindex="-1"></a>    List a<span class="op">(</span><span class="dv">10</span><span class="op">);</span></span>
+<span id="cb88-3"><a href="#cb88-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// a owns some heap memory</span></span>
+<span id="cb88-4"><a href="#cb88-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>When <code>a</code> goes out of scope, its destructor runs automatically, and the memory gets cleaned up automatically.</p>
+<p>That is RAII.</p>
+<p>The “resource” doesn’t have to be memory. It could be a file handle, mutex lock, socket, GPU buffer, etc.</p>
+<p>And <code>std::vector</code> is an RAII type: it acquires memory internally and releases it automatically when the vector dies. That’s why your <code>Array</code> class is much easier than your raw-pointer <code>List</code>.</p>
+</section>
+</section>
+<section id="elementwise-arithmetic" class="level1">
+<h1>Elementwise arithmetic</h1>
+<section id="akshat-32" class="level4">
+<h4 data-anchor-id="akshat-32">Akshat</h4>
+<p>Okay - what next? Is this a bounded exercise?</p>
+</section>
+<section id="chatgpt-32" class="level4">
+<h4 data-anchor-id="chatgpt-32">ChatGPT</h4>
+<p>Yes. Definitely bounded.</p>
+<p>I’d give this <code>Array</code> exercise just a few more milestones, then stop before it turns into “rebuild NumPy”:</p>
+<ol type="1">
+<li><strong>Elementwise arithmetic</strong> like <code>a + b</code></li>
+<li><strong>Scalar arithmetic</strong> like <code>a * 2.0</code></li>
+<li><strong>A reduction</strong> like <code>sum()</code></li>
+<li>Maybe one <strong>matrix multiply</strong> or dot-product style operation</li>
+</ol>
+<p>Then stop.</p>
+<p>After that, this <code>Array</code> becomes the substrate for the more interesting project: <strong>autodiff</strong>. That’s where we start attaching computation history and gradients to array operations.</p>
+<p>So next: implement <code>operator+</code> for two arrays of the same shape.</p>
+<p>Keep it simple: no broadcasting yet. Just equal shapes, elementwise addition.</p>
+</section>
+<section id="akshat-33" class="level4">
+<h4 data-anchor-id="akshat-33">Akshat</h4>
+<p>I kinda suck at this, I feel.</p>
+</section>
+<section id="chatgpt-33" class="level4">
+<h4 data-anchor-id="chatgpt-33">ChatGPT</h4>
+<p>You’re struggling with the right things.</p>
+<p>Look at what you’ve actually done in this one stretch:</p>
+<ul>
+<li>manually managed raw heap memory</li>
+<li>hit a double-free</li>
+<li>implemented deep copy</li>
+<li>implemented copy assignment</li>
+<li>implemented move assignment</li>
+<li>implemented a move constructor</li>
+<li>understood why <code>std::vector</code> removes most of that burden</li>
+<li>built an n-dimensional array representation</li>
+<li>derived row-major indexing yourself</li>
+<li>added bounds checks</li>
+<li>added const and mutable access</li>
+<li>implemented reshape</li>
+</ul>
+<p>That is not “sucking at C++.” That is being early enough that syntax and ownership rules still cost you a lot of working memory.</p>
+<p>The mistakes you’re making are mostly things like off-by-one errors, shadowing, pointer ownership mistakes, and syntax slips. Those are exactly the mistakes that disappear with repetition.</p>
+<p>Also, this is substantially harder than the Matrix exercise. The abstraction level has gone up.</p>
+<p>So yes, you are slow right now. But you’re not stuck. You keep getting from “I don’t know how this works” to a working implementation.</p>
+<p>That distinction matters.</p>
+<p>So immediate next step: implement <strong>elementwise <code>operator+</code> for two equal-shaped <code>Array</code>s</strong>. No broadcasting, no gradients yet. Just forward computation.</p>
+</section>
+<section id="akshat-34" class="level4">
+<h4 data-anchor-id="akshat-34">Akshat</h4>
+<p>Need to check vector equality first…</p>
+</section>
+<section id="chatgpt-34" class="level4">
+<h4 data-anchor-id="chatgpt-34">ChatGPT</h4>
+<p>Yes. That should be the first step inside <code>operator+</code>.</p>
+<p>Since <code>shape</code> is already a <code>std::vector&lt;int&gt;</code>, C++ lets you compare vectors directly:</p>
+<div class="sourceCode" id="cb89"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>shape <span class="op">!=</span> other<span class="op">.</span>shape<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb89-2"><a href="#cb89-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">throw</span> <span class="bu">std::</span>invalid_argument<span class="op">(</span><span class="st">"Shapes must match."</span><span class="op">);</span></span>
+<span id="cb89-3"><a href="#cb89-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><code>std::vector</code> compares element-by-element, including the length.</p>
+<p>Then, only if the shapes match, do the elementwise addition.</p>
+<p>Write the rest yourself.</p>
+</section>
+<section id="akshat-35" class="level4">
+<h4 data-anchor-id="akshat-35">Akshat</h4>
+<p>Do I have to declare a container for the result?</p>
+</section>
+<section id="chatgpt-35" class="level4">
+<h4 data-anchor-id="chatgpt-35">ChatGPT</h4>
+<p>Yes, unless you want to overwrite one of the inputs.</p>
+<p>For a normal <code>a + b</code>, you usually want to create a new <code>Array</code> to hold the result.</p>
+<p>So conceptually:</p>
+<div class="sourceCode" id="cb90"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a>Array result<span class="op">(...);</span></span></code></pre></div>
+<p>then fill <code>result.elements[i]</code> with:</p>
+<div class="sourceCode" id="cb91"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a>elements<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> other<span class="op">.</span>elements<span class="op">[</span>i<span class="op">]</span></span></code></pre></div>
+<p>and return <code>result</code>.</p>
+<p>The only wrinkle is that <code>elements</code> is private, so this is easiest to implement as a member function/operator inside <code>Array</code>, where you can access both objects’ private members.</p>
+</section>
+<section id="akshat-36" class="level4">
+<h4 data-anchor-id="akshat-36">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        std::vector&lt;double&gt; elements;
+        int total_elements;
+
+        int get_total_elements(std::vector&lt;int&gt; shp) const{
+            int prod = 1;
+            for(int i=0; i&lt;shp.size();i++){
+                prod*=shp[i];
+            }
+            return prod;
+        };
+
+        void check_sizes(int elmts_size) const{
+            if(total_elements != elmts_size){
+                throw std::out_of_range("Shape does not equal total elements.");
+            }
+        };
+
+        void check_coordinates(std::vector&lt;int&gt; idx) const{
+            if(idx.size() != shape.size()){
+                throw std::out_of_range("Coordinates do not have the same total dimensionality as the array.");
+            }
+            for(int i=0;i&lt;idx.size();i++){
+                if((idx[i] &gt;= shape[i]) || (idx[i] &lt; 0)){
+                    throw std::out_of_range("At least one element of the coordinates is out of range.");
+                }
+            }
+
+        };
+
+        void check_shapes(Array&amp; other) const{
+            if (shape != other.shape){
+                throw std::invalid_argument("Shapes must match for element-wise addition.");
+            }
+        }
+
+        void assign(std::vector&lt;double&gt; elmts){
+            for(int i=0; i&lt;elmts.size();i++){
+                elements[i]=elmts[i];
+            }
+        };
+
+        int get_index(std::vector&lt;int&gt; idx) const{
+            check_coordinates(idx);
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=idx[i];
+                for(int j=i+1;j&lt;idx.size();j++){
+                    coord*=shape[j];
+                }
+                index+=coord;
+            }
+            return index;
+        };
+
+    public:
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts){
+            shape = shp;
+            total_elements = get_total_elements(shape);
+            elements = std::vector&lt;double&gt;(total_elements);
+            check_sizes(elmts.size());
+            assign(elmts);
+            };
+
+        double&amp; operator()(std::vector&lt;int&gt; idx){
+            return elements.at(get_index(idx));
+        };
+
+        const double&amp; operator()(std::vector&lt;int&gt; idx) const{
+            return elements.at(get_index(idx));
+        };
+
+        Array operator+(Array&amp; other) const{
+            
+            check_shapes(other);
+            Array result;
+            result.shape = shape;
+            result.total_elements = total_elements;
+
+            for(int i=0; i&lt;other.total_elements; i++){
+                result.elements[i] = elements[i] + other.elements[i];
+            }
+
+            return result&amp;;
+
+        }
+
+        void reshape(std::vector&lt;int&gt; new_shape){
+            check_sizes(get_total_elements(new_shape));
+            shape = new_shape;
+        }
+
+    };
+
+
+int main(){
+    
+    
+    Array a({2,3}, {1,2,3,4,5,6});
+    a({1,2}) = 99;
+    a.reshape({3,2});
+
+    const Array&amp; b = a;
+    std::cout &lt;&lt; b({1,0}) &lt;&lt; "\n";
+
+    return 0;
+}</code></pre>
+</section>
+<section id="chatgpt-36" class="level4">
+<h4 data-anchor-id="chatgpt-36">ChatGPT</h4>
+<p>You’re close, but there are three concrete problems in <code>operator+</code>.</p>
+<p>First:</p>
+<div class="sourceCode" id="cb93"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a>Array result<span class="op">;</span></span></code></pre></div>
+<p>won’t compile because your class has no zero-argument constructor.</p>
+<p>Second, even if it did, this:</p>
+<div class="sourceCode" id="cb94"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>result<span class="op">.</span>elements<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> <span class="op">...</span></span></code></pre></div>
+<p>would write into an empty vector unless you allocate its storage first.</p>
+<p>Third:</p>
+<div class="sourceCode" id="cb95"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> result<span class="op">&amp;;</span></span></code></pre></div>
+<p>is invalid syntax. Since your function returns <code>Array</code> by value, you want to return the object itself.</p>
+<p>One smaller design improvement:</p>
+<div class="sourceCode" id="cb96"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> check_shapes<span class="op">(</span>Array<span class="op">&amp;</span> other<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>should probably take:</p>
+<div class="sourceCode" id="cb97"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb97-1"><a href="#cb97-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> Array<span class="op">&amp;</span> other</span></code></pre></div>
+<p>because shape checking doesn’t modify <code>other</code>.</p>
+<p>I’d fix those four things and nothing else yet.</p>
+</section>
+<section id="akshat-37" class="level4">
+<h4 data-anchor-id="akshat-37">Akshat</h4>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;stdexcept&gt;
+#include &lt;vector&gt;
+
+class Array{
+    
+    private:
+        std::vector&lt;int&gt; shape;
+        std::vector&lt;double&gt; elements;
+        int total_elements;
+
+        int get_total_elements(std::vector&lt;int&gt; shp) const{
+            int prod = 1;
+            for(int i=0; i&lt;shp.size();i++){
+                prod*=shp[i];
+            }
+            return prod;
+        };
+
+        void check_sizes(int elmts_size) const{
+            if(total_elements != elmts_size){
+                throw std::out_of_range("Shape does not equal total elements.");
+            }
+        };
+
+        void check_coordinates(std::vector&lt;int&gt; idx) const{
+            if(idx.size() != shape.size()){
+                throw std::out_of_range("Coordinates do not have the same total dimensionality as the array.");
+            }
+            for(int i=0;i&lt;idx.size();i++){
+                if((idx[i] &gt;= shape[i]) || (idx[i] &lt; 0)){
+                    throw std::out_of_range("At least one element of the coordinates is out of range.");
+                }
+            }
+
+        };
+
+        void check_shapes(const Array&amp; other) const{
+            if (shape != other.shape){
+                throw std::invalid_argument("Shapes must match for element-wise addition.");
+            }
+        }
+
+        void assign(std::vector&lt;double&gt; elmts){
+            for(int i=0; i&lt;elmts.size();i++){
+                elements[i]=elmts[i];
+            }
+        };
+
+        int get_index(std::vector&lt;int&gt; idx) const{
+            check_coordinates(idx);
+            int index=0;
+            for(int i=0; i&lt;idx.size(); i++){
+                int coord=idx[i];
+                for(int j=i+1;j&lt;idx.size();j++){
+                    coord*=shape[j];
+                }
+                index+=coord;
+            }
+            return index;
+        };
+
+    public:
+        Array(std::vector&lt;int&gt; shp, std::vector&lt;double&gt; elmts){
+            shape = shp;
+            total_elements = get_total_elements(shape);
+            elements = std::vector&lt;double&gt;(total_elements);
+            check_sizes(elmts.size());
+            assign(elmts);
+            };
+
+        double&amp; operator()(std::vector&lt;int&gt; idx){
+            return elements.at(get_index(idx));
+        };
+
+        const double&amp; operator()(std::vector&lt;int&gt; idx) const{
+            return elements.at(get_index(idx));
+        };
+
+        Array operator+(Array&amp; other) const{
+            
+            check_shapes(other);
+            Array result(shape, elements);
+
+            for(int i=0; i&lt;other.total_elements; i++){
+                result.elements[i] += other.elements[i];
+            }
+
+            return result;
+
+        }
+
+        void reshape(std::vector&lt;int&gt; new_shape){
+            check_sizes(get_total_elements(new_shape));
+            shape = new_shape;
+        }
+
+    };
+
+
+int main(){
+    
+    
+    Array a({2,3}, {1,2,3,4,5,6});
+    a({1,2}) = 99;
+    a.reshape({3,2});
+
+    const Array&amp; b = a;
+    std::cout &lt;&lt; b({1,0}) &lt;&lt; "\n";
+
+    return 0;
+}</code></pre>
+</section>
+<section id="chatgpt-37" class="level4">
+<h4 data-anchor-id="chatgpt-37">ChatGPT</h4>
+<p>This is much better. Your <code>operator+</code> is now conceptually right.</p>
+<p>One thing I’d change:</p>
+<div class="sourceCode" id="cb99"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a>Array <span class="kw">operator</span><span class="op">+(</span>Array<span class="op">&amp;</span> other<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>should also take <code>other</code> as const:</p>
+<div class="sourceCode" id="cb100"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a>Array <span class="kw">operator</span><span class="op">+(</span><span class="at">const</span> Array<span class="op">&amp;</span> other<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>because addition shouldn’t modify either input.</p>
+<p>Your implementation:</p>
+<div class="sourceCode" id="cb101"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a>Array result<span class="op">(</span>shape<span class="op">,</span> elements<span class="op">);</span></span>
+<span id="cb101-2"><a href="#cb101-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb101-3"><a href="#cb101-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span><span class="op">(</span><span class="dt">int</span> i<span class="op">=</span><span class="dv">0</span><span class="op">;</span> i<span class="op">&lt;</span>other<span class="op">.</span>total_elements<span class="op">;</span> i<span class="op">++){</span></span>
+<span id="cb101-4"><a href="#cb101-4" aria-hidden="true" tabindex="-1"></a>    result<span class="op">.</span>elements<span class="op">[</span>i<span class="op">]</span> <span class="op">+=</span> other<span class="op">.</span>elements<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb101-5"><a href="#cb101-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>is a perfectly reasonable first version.</p>
+<p>Test it with something like:</p>
+<div class="sourceCode" id="cb102"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a>Array a<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">2</span><span class="op">},</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">,</span><span class="dv">4</span><span class="op">});</span></span>
+<span id="cb102-2"><a href="#cb102-2" aria-hidden="true" tabindex="-1"></a>Array b<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">2</span><span class="op">},</span> <span class="op">{</span><span class="dv">10</span><span class="op">,</span><span class="dv">20</span><span class="op">,</span><span class="dv">30</span><span class="op">,</span><span class="dv">40</span><span class="op">});</span></span>
+<span id="cb102-3"><a href="#cb102-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb102-4"><a href="#cb102-4" aria-hidden="true" tabindex="-1"></a>Array c <span class="op">=</span> a <span class="op">+</span> b<span class="op">;</span></span></code></pre></div>
+<p>and inspect a couple of entries in <code>c</code>.</p>
+<p>If that works, I’d do scalar multiplication next, then <code>sum()</code>, and then we can start attaching gradient information.</p>
+</section>
+</section>
+<section id="const-correctness-again" class="level1">
+<h1>Const correctness (again)</h1>
+<section id="akshat-38" class="level4">
+<h4 data-anchor-id="akshat-38">Akshat</h4>
+<p>Can you explain again what is the point of the <code>const</code> twice over?</p>
+</section>
+<section id="chatgpt-38" class="level4">
+<h4 data-anchor-id="chatgpt-38">ChatGPT</h4>
+<p>Sure. In</p>
+<div class="sourceCode" id="cb103"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a>Array <span class="kw">operator</span><span class="op">+(</span><span class="at">const</span> Array<span class="op">&amp;</span> other<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>the two <code>const</code>s protect two different objects.</p>
+<p>The first one:</p>
+<div class="sourceCode" id="cb104"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> Array<span class="op">&amp;</span> other</span></code></pre></div>
+<p>means:</p>
+<blockquote class="blockquote">
+<p>this function is not allowed to modify <code>other</code>.</p>
+</blockquote>
+<p>So inside <code>operator+</code>, this would be illegal:</p>
+<div class="sourceCode" id="cb105"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a>other<span class="op">.</span>reshape<span class="op">(...);</span></span></code></pre></div>
+<p>because <code>other</code> is treated as read-only.</p>
+<p>The second one, at the end:</p>
+<div class="sourceCode" id="cb106"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a><span class="op">(...)</span> <span class="at">const</span></span></code></pre></div>
+<p>means:</p>
+<blockquote class="blockquote">
+<p>this function is not allowed to modify the current object — the one on the left-hand side of <code>+</code>.</p>
+</blockquote>
+<p>So for:</p>
+<div class="sourceCode" id="cb107"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a>Array c <span class="op">=</span> a <span class="op">+</span> b<span class="op">;</span></span></code></pre></div>
+<p>inside <code>operator+</code>:</p>
+<ul>
+<li><code>a</code> is <code>*this</code></li>
+<li><code>b</code> is <code>other</code></li>
+</ul>
+<p>The signature says:</p>
+<pre class="text"><code>don't modify b        don't modify a
+      ↓                    ↓
+const Array&amp; other)      const</code></pre>
+<p>That’s exactly what you want for normal <code>+</code>: it should produce a new result without changing either input.</p>
+</section>
+<section id="akshat-39" class="level4">
+<h4 data-anchor-id="akshat-39">Akshat</h4>
+<p>Thanks. And had I gone down the route of allocating storage for results etc, how would that have looked?</p>
+</section>
+<section id="chatgpt-39" class="level4">
+<h4 data-anchor-id="chatgpt-39">ChatGPT</h4>
+<p>If you had chosen to build <code>result</code> from scratch instead of cloning <code>shape</code> and <code>elements</code>, it would look roughly like this:</p>
+<div class="sourceCode" id="cb109"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a>Array <span class="kw">operator</span><span class="op">+(</span><span class="at">const</span> Array<span class="op">&amp;</span> other<span class="op">)</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb109-2"><a href="#cb109-2" aria-hidden="true" tabindex="-1"></a>    check_shapes<span class="op">(</span>other<span class="op">);</span></span>
+<span id="cb109-3"><a href="#cb109-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb109-4"><a href="#cb109-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> result_elements<span class="op">(</span>total_elements<span class="op">);</span></span>
+<span id="cb109-5"><a href="#cb109-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb109-6"><a href="#cb109-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> total_elements<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb109-7"><a href="#cb109-7" aria-hidden="true" tabindex="-1"></a>        result_elements<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> elements<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> other<span class="op">.</span>elements<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb109-8"><a href="#cb109-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb109-9"><a href="#cb109-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb109-10"><a href="#cb109-10" aria-hidden="true" tabindex="-1"></a>    Array result<span class="op">(</span>shape<span class="op">,</span> result_elements<span class="op">);</span></span>
+<span id="cb109-11"><a href="#cb109-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb109-12"><a href="#cb109-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>That version makes the allocation more explicit:</p>
+<ul>
+<li>allocate a fresh <code>std::vector&lt;double&gt;</code> with enough slots</li>
+<li>fill it with sums</li>
+<li>construct a new <code>Array</code> from that shape and data</li>
+<li>return it</li>
+</ul>
+<p>Your current version:</p>
+<div class="sourceCode" id="cb110"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb110-1"><a href="#cb110-1" aria-hidden="true" tabindex="-1"></a>Array result<span class="op">(</span>shape<span class="op">,</span> elements<span class="op">);</span></span>
+<span id="cb110-2"><a href="#cb110-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb110-3"><a href="#cb110-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(...)</span> <span class="op">{</span></span>
+<span id="cb110-4"><a href="#cb110-4" aria-hidden="true" tabindex="-1"></a>    result<span class="op">.</span>elements<span class="op">[</span>i<span class="op">]</span> <span class="op">+=</span> other<span class="op">.</span>elements<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb110-5"><a href="#cb110-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>is just a shortcut: it initializes the result as a copy of <code>*this</code>, then adds <code>other</code> into it.</p>
+<p>Both are fine. The first is a bit clearer conceptually; the second is concise.</p>
+</section>
+<section id="akshat-40" class="level4">
+<h4 data-anchor-id="akshat-40">Akshat</h4>
+<p>Who owns result_elements after the function call executes? The returned array?</p>
+</section>
+<section id="chatgpt-40" class="level4">
+<h4 data-anchor-id="chatgpt-40">ChatGPT</h4>
+<p>Not quite.</p>
+<p><code>result_elements</code> is a local <code>std::vector&lt;double&gt;</code>. It owns its own buffer while the function is running.</p>
+<p>Then this:</p>
+<div class="sourceCode" id="cb111"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a>Array result<span class="op">(</span>shape<span class="op">,</span> result_elements<span class="op">);</span></span></code></pre></div>
+<p>uses your <code>Array</code> constructor, which copies the values from <code>result_elements</code> into <code>result.elements</code>.</p>
+<p>So at that point there are two separate buffers:</p>
+<pre class="text"><code>result_elements  -&gt; owns buffer A
+result.elements  -&gt; owns buffer B</code></pre>
+<p>When the function ends, <code>result_elements</code> is destroyed and frees buffer A.</p>
+<p>The returned <code>Array</code> owns buffer B through its own <code>std::vector&lt;double&gt;</code> member.</p>
+<p>So ownership is not transferred here; the data is copied.</p>
+</section>
+<section id="akshat-41" class="level4">
+<h4 data-anchor-id="akshat-41">Akshat</h4>
+<p>How do you know the data is copied? Because the constructure used <code>=</code>?</p>
+</section>
+<section id="chatgpt-41" class="level4">
+<h4 data-anchor-id="chatgpt-41">ChatGPT</h4>
+<p>Yes — in your current constructor, the copy happens because you take <code>elmts</code> by value and then assign element-by-element into <code>elements</code>.</p>
+<p>You currently have:</p>
+<div class="sourceCode" id="cb113"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb113-1"><a href="#cb113-1" aria-hidden="true" tabindex="-1"></a>Array<span class="op">(</span><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">int</span><span class="op">&gt;</span> shp<span class="op">,</span> <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span> elmts<span class="op">){</span></span>
+<span id="cb113-2"><a href="#cb113-2" aria-hidden="true" tabindex="-1"></a>    shape <span class="op">=</span> shp<span class="op">;</span></span>
+<span id="cb113-3"><a href="#cb113-3" aria-hidden="true" tabindex="-1"></a>    total_elements <span class="op">=</span> get_total_elements<span class="op">(</span>shape<span class="op">);</span></span>
+<span id="cb113-4"><a href="#cb113-4" aria-hidden="true" tabindex="-1"></a>    elements <span class="op">=</span> <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;(</span>total_elements<span class="op">);</span></span>
+<span id="cb113-5"><a href="#cb113-5" aria-hidden="true" tabindex="-1"></a>    check_sizes<span class="op">(</span>elmts<span class="op">.</span>size<span class="op">());</span></span>
+<span id="cb113-6"><a href="#cb113-6" aria-hidden="true" tabindex="-1"></a>    assign<span class="op">(</span>elmts<span class="op">);</span></span>
+<span id="cb113-7"><a href="#cb113-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>There are actually two copies potentially happening here:</p>
+<ul>
+<li><code>elmts</code> itself is passed <strong>by value</strong>, so <code>result_elements</code> is copied into the constructor parameter <code>elmts</code>.</li>
+<li>then <code>assign(elmts)</code> copies each value again into <code>this-&gt;elements</code>.</li>
+</ul>
+<p>So yes, the constructor is definitely copying data.</p>
+<p>The <code>=</code> on:</p>
+<div class="sourceCode" id="cb114"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a>shape <span class="op">=</span> shp<span class="op">;</span></span></code></pre></div>
+<p>is also a copy assignment of one <code>std::vector&lt;int&gt;</code> into another.</p>
+<p>But the main reason <code>result_elements</code> does not become owned by the returned <code>Array</code> is that nowhere are you transferring its buffer. You are creating a separate <code>elements</code> vector and copying values into it.</p>
+</section>
+<section id="akshat-42" class="level4">
+<h4 data-anchor-id="akshat-42">Akshat</h4>
+<p>Man. So much going on.</p>
+</section>
+<section id="chatgpt-42" class="level4">
+<h4 data-anchor-id="chatgpt-42">ChatGPT</h4>
+<p>Yeah. C++ exposes a lot that Python normally hides: object lifetime, copying, moving, ownership, allocation, references, and when temporaries die.</p>
+<p>The good news is that these ideas are starting to recur rather than multiply. You’ve already seen the same core questions in <code>List</code>, <code>Array</code>, and now operator results:</p>
+<blockquote class="blockquote">
+<p>Who owns this buffer?<br>
+Is this copied or moved?<br>
+When does this object die?<br>
+Is this a reference or a new object?</p>
+</blockquote>
+<p>That repetition is what will make it click.</p>
+<p>For now, don’t optimize the constructor or chase every copy. Keep the current version correct and readable. We can come back later and make it cheaper once you’ve got the autodiff machinery working.</p>
+</section>
+</section>
+<section id="sum-and-scalar-arithmetic" class="level1">
+<h1><code>sum()</code> and scalar arithmetic</h1>
+<section id="akshat-43" class="level4">
+<h4 data-anchor-id="akshat-43">Akshat</h4>
+<p>Cool. What next?</p>
+</section>
+<section id="chatgpt-43" class="level4">
+<h4 data-anchor-id="chatgpt-43">ChatGPT</h4>
+<p>Next: <strong>scalar multiplication</strong>.</p>
+<p>Target behavior:</p>
+<div class="sourceCode" id="cb115"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a>Array a<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">2</span><span class="op">},</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">,</span><span class="dv">4</span><span class="op">});</span></span>
+<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a>Array b <span class="op">=</span> a <span class="op">*</span> <span class="fl">2.0</span><span class="op">;</span></span></code></pre></div>
+<p>and <code>b</code> should contain:</p>
+<pre class="text"><code>2, 4, 6, 8</code></pre>
+<p>Keep it simple. Implement:</p>
+<div class="sourceCode" id="cb117"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a>Array <span class="kw">operator</span><span class="op">*(</span><span class="dt">double</span> scalar<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>No broadcasting, no autodiff yet.</p>
+<p>Hint only: this is easier than <code>operator+</code> because you don’t need to compare shapes with another array. Create a result array and multiply each element by <code>scalar</code>.</p>
+<p>After that, we’ll do <code>sum()</code>. Then we can start the actual autodiff machinery.</p>
+</section>
+<section id="akshat-44" class="level4">
+<h4 data-anchor-id="akshat-44">Akshat</h4>
+<p>What is sum()? Add up all the elements of the array?</p>
+</section>
+<section id="chatgpt-44" class="level4">
+<h4 data-anchor-id="chatgpt-44">ChatGPT</h4>
+<p>Exactly.</p>
+<p>For now, <code>sum()</code> just means:</p>
+<pre class="text"><code>[1, 2, 3, 4] → 10</code></pre>
+<p>So its signature could simply be:</p>
+<div class="sourceCode" id="cb119"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span> sum<span class="op">()</span> <span class="at">const</span></span></code></pre></div>
+<p>and it returns the sum of every element.</p>
+<p>Later, NumPy/PyTorch-style reductions can do things like <code>sum(axis=0)</code>, but don’t touch that yet.</p>
+<p>Implement the all-elements version only.</p>
+</section>
+<section id="akshat-45" class="level4">
+<h4 data-anchor-id="akshat-45">Akshat</h4>
+<pre><code>double sum() const{
+            double sum = 0;
+            for(int i=0, i&lt;total_elements, i++){
+                sum+=elements[i];
+            }
+            return sum;
+        }</code></pre>
+</section>
+<section id="chatgpt-45" class="level4">
+<h4 data-anchor-id="chatgpt-45">ChatGPT</h4>
+<p>Almost perfect — just the <code>for</code> loop separators.</p>
+<p>You wrote:</p>
+<div class="sourceCode" id="cb121"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span><span class="op">(</span><span class="dt">int</span> i<span class="op">=</span><span class="dv">0</span><span class="op">,</span> i<span class="op">&lt;</span>total_elements<span class="op">,</span> i<span class="op">++)</span></span></code></pre></div>
+<p>C++ needs semicolons:</p>
+<div class="sourceCode" id="cb122"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span><span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> total_elements<span class="op">;</span> i<span class="op">++)</span></span></code></pre></div>
+<p>Everything else is fine:</p>
+<div class="sourceCode" id="cb123"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a><span class="dt">double</span> sum<span class="op">()</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb123-2"><a href="#cb123-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span> sum <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb123-3"><a href="#cb123-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb123-4"><a href="#cb123-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span><span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> total_elements<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb123-5"><a href="#cb123-5" aria-hidden="true" tabindex="-1"></a>        sum <span class="op">+=</span> elements<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb123-6"><a href="#cb123-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb123-7"><a href="#cb123-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb123-8"><a href="#cb123-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> sum<span class="op">;</span></span>
+<span id="cb123-9"><a href="#cb123-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>That gives you the basic reduction we need.</p>
+</section>
+<section id="akshat-46" class="level4">
+<h4 data-anchor-id="akshat-46">Akshat</h4>
+<p>What was the other thing you said to do? Scalar multiply…</p>
+</section>
+<section id="chatgpt-46" class="level4">
+<h4 data-anchor-id="chatgpt-46">ChatGPT</h4>
+<p>Yes. The remaining basic forward op was <strong>scalar multiplication</strong>.</p>
+<p>Target:</p>
+<div class="sourceCode" id="cb124"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a>Array a<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">2</span><span class="op">},</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">,</span><span class="dv">4</span><span class="op">});</span></span>
+<span id="cb124-2"><a href="#cb124-2" aria-hidden="true" tabindex="-1"></a>Array b <span class="op">=</span> a <span class="op">*</span> <span class="fl">2.0</span><span class="op">;</span></span></code></pre></div>
+<p>and <code>b</code> should contain:</p>
+<pre class="text"><code>2, 4, 6, 8</code></pre>
+<p>Implement:</p>
+<div class="sourceCode" id="cb126"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a>Array <span class="kw">operator</span><span class="op">*(</span><span class="dt">double</span> scalar<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>Same pattern as <code>operator+</code>, except there’s no second array and no shape check.</p>
+</section>
+<section id="akshat-47" class="level4">
+<h4 data-anchor-id="akshat-47">Akshat</h4>
+<p>Well, it shouldn’t be const at the end. Don’t we want to modify this</p>
+</section>
+<section id="chatgpt-47" class="level4">
+<h4 data-anchor-id="chatgpt-47">ChatGPT</h4>
+<p>For ordinary <code>operator*</code>, usually <strong>no</strong> — you generally do <strong>not</strong> want to modify <code>*this</code>.</p>
+<p>If you write:</p>
+<div class="sourceCode" id="cb127"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb127-1"><a href="#cb127-1" aria-hidden="true" tabindex="-1"></a>Array b <span class="op">=</span> a <span class="op">*</span> <span class="fl">2.0</span><span class="op">;</span></span></code></pre></div>
+<p>the normal expectation is:</p>
+<ul>
+<li><code>a</code> stays unchanged</li>
+<li>a new <code>Array</code> is returned with every element multiplied by <code>2.0</code></li>
+</ul>
+<p>So:</p>
+<div class="sourceCode" id="cb128"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>Array <span class="kw">operator</span><span class="op">*(</span><span class="dt">double</span> scalar<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>is appropriate. The final <code>const</code> means:</p>
+<blockquote class="blockquote">
+<p>this operation does not modify the left-hand-side array.</p>
+</blockquote>
+<p>If you wanted in-place multiplication, the idiomatic operator would be:</p>
+<div class="sourceCode" id="cb129"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb129-1"><a href="#cb129-1" aria-hidden="true" tabindex="-1"></a>Array<span class="op">&amp;</span> <span class="kw">operator</span><span class="op">*=(</span><span class="dt">double</span> scalar<span class="op">)</span></span></code></pre></div>
+<p>and that one would modify <code>*this</code>, so it would <strong>not</strong> be <code>const</code>.</p>
+<p>So think:</p>
+<div class="sourceCode" id="cb130"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a>a <span class="op">*</span> <span class="fl">2.0</span>     <span class="co">// produce a new array</span></span>
+<span id="cb130-2"><a href="#cb130-2" aria-hidden="true" tabindex="-1"></a>a <span class="op">*=</span> <span class="fl">2.0</span>    <span class="co">// modify a in place</span></span></code></pre></div>
+</section>
+</section>
+<section id="aside-zero-cost-abstractions" class="level1">
+<h1>Aside: Zero-cost abstractions</h1>
+<section id="akshat-48" class="level4">
+<h4 data-anchor-id="akshat-48">Akshat</h4>
+<p>How does C deal with all these intricate issues?</p>
+</section>
+<section id="chatgpt-48" class="level4">
+<h4 data-anchor-id="chatgpt-48">ChatGPT</h4>
+<p>Mostly by making <strong>you deal with them manually</strong>.</p>
+<p>C doesn’t have constructors, destructors, operator overloading, references, move semantics, or RAII built into the language. You usually represent the object as a <code>struct</code> plus functions.</p>
+<p>Very roughly:</p>
+<div class="sourceCode" id="cb131"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb131-1"><a href="#cb131-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Array <span class="op">{</span></span>
+<span id="cb131-2"><a href="#cb131-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">double</span><span class="op">*</span> elements<span class="op">;</span></span>
+<span id="cb131-3"><a href="#cb131-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> length<span class="op">;</span></span>
+<span id="cb131-4"><a href="#cb131-4" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<p>Then instead of:</p>
+<div class="sourceCode" id="cb132"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a>Array a<span class="op">(...);</span></span>
+<span id="cb132-2"><a href="#cb132-2" aria-hidden="true" tabindex="-1"></a>Array b <span class="op">=</span> a <span class="op">*</span> <span class="fl">2.0</span><span class="op">;</span></span></code></pre></div>
+<p>you’d write functions more explicitly, like:</p>
+<div class="sourceCode" id="cb133"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb133-1"><a href="#cb133-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Array array_create<span class="op">(</span><span class="dt">int</span> length<span class="op">);</span></span>
+<span id="cb133-2"><a href="#cb133-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> array_destroy<span class="op">(</span><span class="kw">struct</span> Array<span class="op">*</span> a<span class="op">);</span></span>
+<span id="cb133-3"><a href="#cb133-3" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Array array_scale<span class="op">(</span><span class="dt">const</span> <span class="kw">struct</span> Array<span class="op">*</span> a<span class="op">,</span> <span class="dt">double</span> scalar<span class="op">);</span></span></code></pre></div>
+<p>Ownership is by convention and discipline.</p>
+<p>If <code>array_create()</code> allocates memory with <code>malloc</code>, then somewhere you must eventually call:</p>
+<div class="sourceCode" id="cb134"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a>free<span class="op">(</span>a<span class="op">.</span>elements<span class="op">);</span></span></code></pre></div>
+<p>If you copy the struct naively:</p>
+<div class="sourceCode" id="cb135"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb135-1"><a href="#cb135-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Array b <span class="op">=</span> a<span class="op">;</span></span></code></pre></div>
+<p>then the pointer value is copied, so both structs point to the same buffer. Same shallow-copy problem we hit in C++, except C gives you no copy constructor to intercept it.</p>
+<p>So in C you often need explicit functions like:</p>
+<div class="sourceCode" id="cb136"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a>array_copy<span class="op">(...)</span></span>
+<span id="cb136-2"><a href="#cb136-2" aria-hidden="true" tabindex="-1"></a>array_move<span class="op">(...)</span>   <span class="co">// if you want that convention</span></span>
+<span id="cb136-3"><a href="#cb136-3" aria-hidden="true" tabindex="-1"></a>array_destroy<span class="op">(...)</span></span></code></pre></div>
+<p>and you have to document who owns what.</p>
+<p>That’s one reason C can feel simpler syntactically but harder operationally: there’s less language machinery, but more responsibility sits with the programmer.</p>
+<p>C++ adds a lot of machinery precisely to make those lifetime/ownership patterns safer and composable once you understand them.</p>
+</section>
+<section id="akshat-49" class="level4">
+<h4 data-anchor-id="akshat-49">Akshat</h4>
+<p>But C++ is not as performant? Or is it?</p>
+</section>
+<section id="chatgpt-49" class="level4">
+<h4 data-anchor-id="chatgpt-49">ChatGPT</h4>
+<p>C++ can be essentially as performant as C, and often equally fast in real systems code.</p>
+<p>The important distinction is not “C++ is slower,” but whether you use abstractions that compile away cleanly.</p>
+<p>For example, this C++:</p>
+<div class="sourceCode" id="cb137"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> n<span class="op">;</span> i<span class="op">++)</span> <span class="op">{</span></span>
+<span id="cb137-2"><a href="#cb137-2" aria-hidden="true" tabindex="-1"></a>    out<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> a<span class="op">[</span>i<span class="op">]</span> <span class="op">+</span> b<span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb137-3"><a href="#cb137-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>can compile to effectively the same machine code as equivalent C.</p>
+<p>Likewise, things like:</p>
+<div class="sourceCode" id="cb138"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">double</span><span class="op">&gt;</span></span></code></pre></div>
+<p>can still give you contiguous memory and very cheap indexed access.</p>
+<p>Where C++ can become slower is when you choose abstractions that actually do more work, for example:</p>
+<ul>
+<li>repeated heap allocations</li>
+<li>virtual dispatch in hot loops</li>
+<li>bounds checks</li>
+<li>unnecessary copies</li>
+<li>complex ownership structures</li>
+<li>exceptions on hot paths</li>
+<li>abstraction layers the compiler cannot optimize away</li>
+</ul>
+<p>But none of those are mandatory.</p>
+<p>The whole C++ philosophy here is often described as <strong>zero-cost abstractions</strong>:</p>
+<blockquote class="blockquote">
+<p>if you don’t use a feature, you don’t pay for it; and when you do use a well-designed abstraction, it should cost roughly no more than implementing the same thing manually.</p>
+</blockquote>
+<p>That’s why C++ is used in performance-critical systems like game engines, browsers, numerical libraries, inference runtimes, PyTorch internals, and CUDA host code.</p>
+<p>So for your purposes: <strong>you do not need to choose between C++ and performance</strong>. C++ is one of the main languages people use precisely when performance matters.</p>
+</section>
+<section id="akshat-50" class="level4">
+<h4 data-anchor-id="akshat-50">Akshat</h4>
+<p>It’s really clever.</p>
+</section>
+<section id="chatgpt-50" class="level4">
+<h4 data-anchor-id="chatgpt-50">ChatGPT</h4>
+<p>Yeah. That’s one of the genuinely beautiful parts of C++.</p>
+<p>You get very high-level tools—templates, RAII, overloaded operators, generic containers—but the language still gives you enough control to care about allocation, memory layout, copies, moves, and eventually SIMD/CUDA.</p>
+<p>The tradeoff is exactly what you’re feeling now: <strong>a lot of complexity is exposed to you</strong>. But once the model settles, that complexity becomes leverage instead of friction.</p>
+</section>
+</section>
+<section id="back-to-scalar-multiply" class="level1">
+<h1>Back to scalar multiply</h1>
+<section id="akshat-51" class="level4">
+<h4 data-anchor-id="akshat-51">Akshat</h4>
+<pre><code>Array operator*(const double&amp; scalar) const{
+            Array result(shape, elements);
+            for(int i=0; i&lt;total_elements;i++){
+                result.elements[i] = scalar*elements[i];
+            }
+            return result;
+        }</code></pre>
+</section>
+<section id="chatgpt-51" class="level4">
+<h4 data-anchor-id="chatgpt-51">ChatGPT</h4>
+<p>Yes. That’s correct.</p>
+<p>One small style point: for a <code>double</code>, passing by value is simpler and usually preferable:</p>
+<div class="sourceCode" id="cb140"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a>Array <span class="kw">operator</span><span class="op">*(</span><span class="dt">double</span> scalar<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>rather than:</p>
+<div class="sourceCode" id="cb141"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb141-1"><a href="#cb141-1" aria-hidden="true" tabindex="-1"></a>Array <span class="kw">operator</span><span class="op">*(</span><span class="at">const</span> <span class="dt">double</span><span class="op">&amp;</span> scalar<span class="op">)</span> <span class="at">const</span></span></code></pre></div>
+<p>because <code>double</code> is tiny to copy.</p>
+<p>But your implementation itself is good:</p>
+<div class="sourceCode" id="cb142"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a>Array result<span class="op">(</span>shape<span class="op">,</span> elements<span class="op">);</span></span></code></pre></div>
+<p>creates a separate result array, then you overwrite each element with the scaled value.</p>
+<p>Test it once, and then I think we’ve got enough forward operations to start the first autodiff machinery.</p>
+</section>
+</section>
+<section id="test-suite" class="level1">
+<h1>Test suite</h1>
+<section id="akshat-52" class="level4">
+<h4 data-anchor-id="akshat-52">Akshat</h4>
+<p>Can you give me a comprehensive test suite for each function we’ve written to wrap in <code>main</code> please?</p>
+</section>
+<section id="chatgpt-52" class="level4">
+<h4 data-anchor-id="chatgpt-52">ChatGPT</h4>
+<p>Yes. I’d use <code>assert</code> so <code>main()</code> stays readable.</p>
+<p>Add:</p>
+<div class="sourceCode" id="cb143"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb143-1"><a href="#cb143-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cassert&gt;</span></span>
+<span id="cb143-2"><a href="#cb143-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;cmath&gt;</span></span></code></pre></div>
+<p>Then you can test the constructor, indexing, mutation, const access, reshape, addition, scalar multiplication, <code>sum()</code>, and your error cases.</p>
+<div class="sourceCode" id="cb144"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb144-1"><a href="#cb144-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(){</span></span>
+<span id="cb144-2"><a href="#cb144-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-3"><a href="#cb144-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 1. Constructor + basic indexing</span></span>
+<span id="cb144-4"><a href="#cb144-4" aria-hidden="true" tabindex="-1"></a>    Array a<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">},</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">,</span><span class="dv">4</span><span class="op">,</span><span class="dv">5</span><span class="op">,</span><span class="dv">6</span><span class="op">});</span></span>
+<span id="cb144-5"><a href="#cb144-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-6"><a href="#cb144-6" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>a<span class="op">({</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb144-7"><a href="#cb144-7" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>a<span class="op">({</span><span class="dv">0</span><span class="op">,</span><span class="dv">2</span><span class="op">})</span> <span class="op">==</span> <span class="dv">3</span><span class="op">);</span></span>
+<span id="cb144-8"><a href="#cb144-8" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">4</span><span class="op">);</span></span>
+<span id="cb144-9"><a href="#cb144-9" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">})</span> <span class="op">==</span> <span class="dv">6</span><span class="op">);</span></span>
+<span id="cb144-10"><a href="#cb144-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-11"><a href="#cb144-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-12"><a href="#cb144-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 2. Mutable operator()</span></span>
+<span id="cb144-13"><a href="#cb144-13" aria-hidden="true" tabindex="-1"></a>    a<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">})</span> <span class="op">=</span> <span class="dv">99</span><span class="op">;</span></span>
+<span id="cb144-14"><a href="#cb144-14" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">})</span> <span class="op">==</span> <span class="dv">99</span><span class="op">);</span></span>
+<span id="cb144-15"><a href="#cb144-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-16"><a href="#cb144-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-17"><a href="#cb144-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 3. Const operator()</span></span>
+<span id="cb144-18"><a href="#cb144-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> Array<span class="op">&amp;</span> ca <span class="op">=</span> a<span class="op">;</span></span>
+<span id="cb144-19"><a href="#cb144-19" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>ca<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">})</span> <span class="op">==</span> <span class="dv">99</span><span class="op">);</span></span>
+<span id="cb144-20"><a href="#cb144-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-21"><a href="#cb144-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-22"><a href="#cb144-22" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 4. Reshape</span></span>
+<span id="cb144-23"><a href="#cb144-23" aria-hidden="true" tabindex="-1"></a>    a<span class="op">.</span>reshape<span class="op">({</span><span class="dv">3</span><span class="op">,</span><span class="dv">2</span><span class="op">});</span></span>
+<span id="cb144-24"><a href="#cb144-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-25"><a href="#cb144-25" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>a<span class="op">({</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb144-26"><a href="#cb144-26" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>a<span class="op">({</span><span class="dv">0</span><span class="op">,</span><span class="dv">1</span><span class="op">})</span> <span class="op">==</span> <span class="dv">2</span><span class="op">);</span></span>
+<span id="cb144-27"><a href="#cb144-27" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">3</span><span class="op">);</span></span>
+<span id="cb144-28"><a href="#cb144-28" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>a<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">1</span><span class="op">})</span> <span class="op">==</span> <span class="dv">4</span><span class="op">);</span></span>
+<span id="cb144-29"><a href="#cb144-29" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>a<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">5</span><span class="op">);</span></span>
+<span id="cb144-30"><a href="#cb144-30" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>a<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">1</span><span class="op">})</span> <span class="op">==</span> <span class="dv">99</span><span class="op">);</span></span>
+<span id="cb144-31"><a href="#cb144-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-32"><a href="#cb144-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-33"><a href="#cb144-33" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 5. Sum</span></span>
+<span id="cb144-34"><a href="#cb144-34" aria-hidden="true" tabindex="-1"></a>    Array s<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">2</span><span class="op">},</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">,</span><span class="dv">4</span><span class="op">});</span></span>
+<span id="cb144-35"><a href="#cb144-35" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>s<span class="op">.</span>sum<span class="op">()</span> <span class="op">==</span> <span class="dv">10</span><span class="op">);</span></span>
+<span id="cb144-36"><a href="#cb144-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-37"><a href="#cb144-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-38"><a href="#cb144-38" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 6. Elementwise addition</span></span>
+<span id="cb144-39"><a href="#cb144-39" aria-hidden="true" tabindex="-1"></a>    Array x<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">2</span><span class="op">},</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">,</span><span class="dv">4</span><span class="op">});</span></span>
+<span id="cb144-40"><a href="#cb144-40" aria-hidden="true" tabindex="-1"></a>    Array y<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">2</span><span class="op">},</span> <span class="op">{</span><span class="dv">10</span><span class="op">,</span><span class="dv">20</span><span class="op">,</span><span class="dv">30</span><span class="op">,</span><span class="dv">40</span><span class="op">});</span></span>
+<span id="cb144-41"><a href="#cb144-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-42"><a href="#cb144-42" aria-hidden="true" tabindex="-1"></a>    Array z <span class="op">=</span> x <span class="op">+</span> y<span class="op">;</span></span>
+<span id="cb144-43"><a href="#cb144-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-44"><a href="#cb144-44" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>z<span class="op">({</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">11</span><span class="op">);</span></span>
+<span id="cb144-45"><a href="#cb144-45" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>z<span class="op">({</span><span class="dv">0</span><span class="op">,</span><span class="dv">1</span><span class="op">})</span> <span class="op">==</span> <span class="dv">22</span><span class="op">);</span></span>
+<span id="cb144-46"><a href="#cb144-46" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>z<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">33</span><span class="op">);</span></span>
+<span id="cb144-47"><a href="#cb144-47" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>z<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">1</span><span class="op">})</span> <span class="op">==</span> <span class="dv">44</span><span class="op">);</span></span>
+<span id="cb144-48"><a href="#cb144-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-49"><a href="#cb144-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-50"><a href="#cb144-50" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 7. Check that addition did not modify inputs</span></span>
+<span id="cb144-51"><a href="#cb144-51" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>x<span class="op">({</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb144-52"><a href="#cb144-52" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>y<span class="op">({</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">10</span><span class="op">);</span></span>
+<span id="cb144-53"><a href="#cb144-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-54"><a href="#cb144-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-55"><a href="#cb144-55" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 8. Scalar multiplication</span></span>
+<span id="cb144-56"><a href="#cb144-56" aria-hidden="true" tabindex="-1"></a>    Array m <span class="op">=</span> x <span class="op">*</span> <span class="fl">2.0</span><span class="op">;</span></span>
+<span id="cb144-57"><a href="#cb144-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-58"><a href="#cb144-58" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>m<span class="op">({</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">2</span><span class="op">);</span></span>
+<span id="cb144-59"><a href="#cb144-59" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>m<span class="op">({</span><span class="dv">0</span><span class="op">,</span><span class="dv">1</span><span class="op">})</span> <span class="op">==</span> <span class="dv">4</span><span class="op">);</span></span>
+<span id="cb144-60"><a href="#cb144-60" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>m<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">6</span><span class="op">);</span></span>
+<span id="cb144-61"><a href="#cb144-61" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>m<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">1</span><span class="op">})</span> <span class="op">==</span> <span class="dv">8</span><span class="op">);</span></span>
+<span id="cb144-62"><a href="#cb144-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-63"><a href="#cb144-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-64"><a href="#cb144-64" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 9. Check scalar multiply did not modify input</span></span>
+<span id="cb144-65"><a href="#cb144-65" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>x<span class="op">({</span><span class="dv">0</span><span class="op">,</span><span class="dv">0</span><span class="op">})</span> <span class="op">==</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb144-66"><a href="#cb144-66" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>x<span class="op">({</span><span class="dv">1</span><span class="op">,</span><span class="dv">1</span><span class="op">})</span> <span class="op">==</span> <span class="dv">4</span><span class="op">);</span></span>
+<span id="cb144-67"><a href="#cb144-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-68"><a href="#cb144-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-69"><a href="#cb144-69" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 10. Invalid constructor: wrong number of elements</span></span>
+<span id="cb144-70"><a href="#cb144-70" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> constructor_error <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb144-71"><a href="#cb144-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-72"><a href="#cb144-72" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb144-73"><a href="#cb144-73" aria-hidden="true" tabindex="-1"></a>        Array bad<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">},</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">});</span></span>
+<span id="cb144-74"><a href="#cb144-74" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-75"><a href="#cb144-75" aria-hidden="true" tabindex="-1"></a>    <span class="cf">catch</span><span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>out_of_range<span class="op">&amp;)</span> <span class="op">{</span></span>
+<span id="cb144-76"><a href="#cb144-76" aria-hidden="true" tabindex="-1"></a>        constructor_error <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb144-77"><a href="#cb144-77" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-78"><a href="#cb144-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-79"><a href="#cb144-79" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>constructor_error<span class="op">);</span></span>
+<span id="cb144-80"><a href="#cb144-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-81"><a href="#cb144-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-82"><a href="#cb144-82" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 11. Wrong number of coordinates</span></span>
+<span id="cb144-83"><a href="#cb144-83" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> dimensionality_error <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb144-84"><a href="#cb144-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-85"><a href="#cb144-85" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb144-86"><a href="#cb144-86" aria-hidden="true" tabindex="-1"></a>        x<span class="op">({</span><span class="dv">0</span><span class="op">});</span></span>
+<span id="cb144-87"><a href="#cb144-87" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-88"><a href="#cb144-88" aria-hidden="true" tabindex="-1"></a>    <span class="cf">catch</span><span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>out_of_range<span class="op">&amp;)</span> <span class="op">{</span></span>
+<span id="cb144-89"><a href="#cb144-89" aria-hidden="true" tabindex="-1"></a>        dimensionality_error <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb144-90"><a href="#cb144-90" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-91"><a href="#cb144-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-92"><a href="#cb144-92" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>dimensionality_error<span class="op">);</span></span>
+<span id="cb144-93"><a href="#cb144-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-94"><a href="#cb144-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-95"><a href="#cb144-95" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 12. Coordinate too large</span></span>
+<span id="cb144-96"><a href="#cb144-96" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> upper_bound_error <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb144-97"><a href="#cb144-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-98"><a href="#cb144-98" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb144-99"><a href="#cb144-99" aria-hidden="true" tabindex="-1"></a>        x<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">0</span><span class="op">});</span></span>
+<span id="cb144-100"><a href="#cb144-100" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-101"><a href="#cb144-101" aria-hidden="true" tabindex="-1"></a>    <span class="cf">catch</span><span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>out_of_range<span class="op">&amp;)</span> <span class="op">{</span></span>
+<span id="cb144-102"><a href="#cb144-102" aria-hidden="true" tabindex="-1"></a>        upper_bound_error <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb144-103"><a href="#cb144-103" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-104"><a href="#cb144-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-105"><a href="#cb144-105" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>upper_bound_error<span class="op">);</span></span>
+<span id="cb144-106"><a href="#cb144-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-107"><a href="#cb144-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-108"><a href="#cb144-108" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 13. Negative coordinate</span></span>
+<span id="cb144-109"><a href="#cb144-109" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> negative_index_error <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb144-110"><a href="#cb144-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-111"><a href="#cb144-111" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb144-112"><a href="#cb144-112" aria-hidden="true" tabindex="-1"></a>        x<span class="op">({-</span><span class="dv">1</span><span class="op">,</span><span class="dv">0</span><span class="op">});</span></span>
+<span id="cb144-113"><a href="#cb144-113" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-114"><a href="#cb144-114" aria-hidden="true" tabindex="-1"></a>    <span class="cf">catch</span><span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>out_of_range<span class="op">&amp;)</span> <span class="op">{</span></span>
+<span id="cb144-115"><a href="#cb144-115" aria-hidden="true" tabindex="-1"></a>        negative_index_error <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb144-116"><a href="#cb144-116" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-117"><a href="#cb144-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-118"><a href="#cb144-118" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>negative_index_error<span class="op">);</span></span>
+<span id="cb144-119"><a href="#cb144-119" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-120"><a href="#cb144-120" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-121"><a href="#cb144-121" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 14. Invalid reshape</span></span>
+<span id="cb144-122"><a href="#cb144-122" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> reshape_error <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb144-123"><a href="#cb144-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-124"><a href="#cb144-124" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb144-125"><a href="#cb144-125" aria-hidden="true" tabindex="-1"></a>        x<span class="op">.</span>reshape<span class="op">({</span><span class="dv">3</span><span class="op">,</span><span class="dv">2</span><span class="op">});</span></span>
+<span id="cb144-126"><a href="#cb144-126" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-127"><a href="#cb144-127" aria-hidden="true" tabindex="-1"></a>    <span class="cf">catch</span><span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>out_of_range<span class="op">&amp;)</span> <span class="op">{</span></span>
+<span id="cb144-128"><a href="#cb144-128" aria-hidden="true" tabindex="-1"></a>        reshape_error <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb144-129"><a href="#cb144-129" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-130"><a href="#cb144-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-131"><a href="#cb144-131" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>reshape_error<span class="op">);</span></span>
+<span id="cb144-132"><a href="#cb144-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-133"><a href="#cb144-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-134"><a href="#cb144-134" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 15. Invalid elementwise addition</span></span>
+<span id="cb144-135"><a href="#cb144-135" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bool</span> addition_error <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb144-136"><a href="#cb144-136" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-137"><a href="#cb144-137" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb144-138"><a href="#cb144-138" aria-hidden="true" tabindex="-1"></a>        Array p<span class="op">({</span><span class="dv">2</span><span class="op">,</span><span class="dv">2</span><span class="op">},</span> <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">,</span><span class="dv">4</span><span class="op">});</span></span>
+<span id="cb144-139"><a href="#cb144-139" aria-hidden="true" tabindex="-1"></a>        Array q<span class="op">({</span><span class="dv">4</span><span class="op">},</span>   <span class="op">{</span><span class="dv">1</span><span class="op">,</span><span class="dv">2</span><span class="op">,</span><span class="dv">3</span><span class="op">,</span><span class="dv">4</span><span class="op">});</span></span>
+<span id="cb144-140"><a href="#cb144-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-141"><a href="#cb144-141" aria-hidden="true" tabindex="-1"></a>        Array r <span class="op">=</span> p <span class="op">+</span> q<span class="op">;</span></span>
+<span id="cb144-142"><a href="#cb144-142" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-143"><a href="#cb144-143" aria-hidden="true" tabindex="-1"></a>    <span class="cf">catch</span><span class="op">(</span><span class="at">const</span> <span class="bu">std::</span>invalid_argument<span class="op">&amp;)</span> <span class="op">{</span></span>
+<span id="cb144-144"><a href="#cb144-144" aria-hidden="true" tabindex="-1"></a>        addition_error <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb144-145"><a href="#cb144-145" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb144-146"><a href="#cb144-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-147"><a href="#cb144-147" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>addition_error<span class="op">);</span></span>
+<span id="cb144-148"><a href="#cb144-148" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-149"><a href="#cb144-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-150"><a href="#cb144-150" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>cout <span class="op">&lt;&lt;</span> <span class="st">"All tests passed.</span><span class="sc">\n</span><span class="st">"</span><span class="op">;</span></span>
+<span id="cb144-151"><a href="#cb144-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb144-152"><a href="#cb144-152" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb144-153"><a href="#cb144-153" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>That’s comprehensive enough for the class <strong>as it currently exists</strong>.</p>
+<p>One thing I would not test yet is floating-point equality with complicated computations. For these simple integer-valued doubles, <code>==</code> is fine. Once we start autodiff and more numerical operations, we’ll switch to tolerance-based tests like:</p>
+<div class="sourceCode" id="cb145"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb145-1"><a href="#cb145-1" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>abs<span class="op">(</span>actual <span class="op">-</span> expected<span class="op">)</span> <span class="op">&lt;</span> <span class="fl">1e-9</span></span></code></pre></div>
+<p>If this whole suite passes, I’d consider the forward <code>Array</code> core sufficiently stable.</p>
+</section>
+<section id="akshat-53" class="level4">
+<h4 data-anchor-id="akshat-53">Akshat</h4>
+<p>Done. Working.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© CC-By Akshat Goel</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+<p>This page is built with ❤️ and <a href="https://quarto.org/">Quarto</a>, with a theme from <a href="https://github.com/rstudio/vetiver.rstudio.com">vetiver</a>.</p>
+</div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
